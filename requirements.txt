@@ -14,13 +14,11 @@ Keras
 Flask
 Django
 Requests
-Beautiful Soup
 Scrapy
 SQLAlchemy
 OpenCV
 Pillow
 PyTorch
-Jupyter Notebook
 Turtle
 pytest
 Pygame
