@@ -22,11 +22,11 @@
             padding: 30px;
             border-radius: 15px;
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-            transition: transform 0.3s;
-            position: relative;
+            transition: transform 0.3s, box-shadow 0.3s;
         }
         .container:hover {
             transform: translateY(-5px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
         }
         h1 {
             text-align: center;
@@ -46,6 +46,11 @@
             border-radius: 8px;
             resize: none;
             font-family: 'Courier New', Courier, monospace;
+            transition: border-color 0.3s;
+        }
+        textarea:focus {
+            border-color: #007bff;
+            outline: none;
         }
         .btn-primary {
             display: inline-flex;
@@ -56,11 +61,12 @@
             padding: 10px 25px;
             border-radius: 4px;
             cursor: pointer;
-            transition: background-color 0.3s;
+            transition: background-color 0.3s, transform 0.2s;
             font-size: 16px;
         }
         .btn-primary:hover {
             background-color: #0056b3;
+            transform: scale(1.05);
         }
         .output, .history {
             margin-top: 30px;
@@ -68,6 +74,10 @@
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s;
+        }
+        .output:hover, .history:hover {
+            transform: scale(1.01);
         }
         pre {
             white-space: pre-wrap;
@@ -101,6 +111,7 @@
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             text-align: center;
+            transition: transform 0.3s;
         }
         .modal-content p {
             margin: 20px 0;
@@ -112,6 +123,7 @@
             border: none;
             border-radius: 5px;
             cursor: pointer;
+            transition: background-color 0.3s;
         }
         .btn-close:hover {
             background-color: #c82333;
@@ -124,13 +136,18 @@
             padding: 10px;
             border: 1px solid #ddd;
             border-radius: 8px;
+            transition: border-color 0.3s;
+        }
+        .input-field input:focus {
+            border-color: #007bff;
+            outline: none;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1><i class='bx bx-code-alt'></i> Python 解釋器</h1>
-        <form method="POST">
+        <form id="code-form" method="POST">
             {{ form.hidden_tag() }}
             <div class="form-group">
                 {{ form.code.label }}
@@ -167,7 +184,6 @@
         </div>
     </div>
 
-    <!-- 模組安裝進度顯示框 -->
     <div id="modal" class="modal">
         <div class="modal-content">
             <h3>模組安裝進度</h3>
@@ -176,7 +192,6 @@
         </div>
     </div>
 
-    <!-- 虛擬輸入框 -->
     <div id="input-modal" class="input-modal">
         <div class="input-modal-content">
             <h3>請輸入資料</h3>
@@ -195,8 +210,12 @@
 
         document.querySelector('#submit-input').addEventListener('click', function() {
             var userInput = document.querySelector('#user-input').value;
-            document.querySelector('form').append('<input type="hidden" name="user_input" value="'+userInput+'">');
-            document.querySelector('form').submit();
+            var hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.name = 'user_input';
+            hiddenInput.value = userInput;
+            document.querySelector('#code-form').appendChild(hiddenInput);
+            document.querySelector('#code-form').submit();
         });
 
         function showInstallModal() {
@@ -206,6 +225,12 @@
         function showInputModal() {
             document.querySelector('#input-modal').style.display = 'flex';
         }
+
+        // 禁用提交按鈕
+        document.querySelector('#code-form').addEventListener('submit', function() {
+            document.querySelector('.btn-primary').disabled = true;
+            document.querySelector('.btn-primary').innerText = '執行中...';
+        });
     </script>
 </body>
 </html>
