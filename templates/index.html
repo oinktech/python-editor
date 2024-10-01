@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <title>Python Interpreter</title>
+    <title>Python 解釋器</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/themes/prism.min.css">
     <style>
         body {
@@ -103,14 +103,12 @@
 </head>
 <body>
     <div id="sidebar">
-        <h2>Files</h2>
-        {% for file in files %}
-            <a href="{{ url_for('index', filename=file) }}">{{ file }}</a>
-        {% endfor %}
-        <a href="{{ url_for('index') }}">New File</a>
+        <h2>檔案列表</h2>
+        <div id="file-list"></div>
+        <a href="#" onclick="createNewFile()">新增檔案</a>
     </div>
     <div id="content">
-        <h1>Python Interpreter</h1>
+        <h1>Python 解釋器</h1>
         <div class="container">
             <form method="POST">
                 {{ form.hidden_tag() }}
@@ -118,30 +116,30 @@
                     {{ form.code.label }}
                     {{ form.code(class="form-control") }}
                 </div>
-                <button type="submit" class="btn btn-primary">Run</button>
+                <button type="submit" class="btn btn-primary">執行</button>
             </form>
 
             {% if output is not none %}
             <div class="output">
-                {% if output.startswith('Error') %}
+                {% if output.startswith('錯誤') %}
                 <div class="error">
-                    <h3>Error:</h3>
+                    <h3>錯誤:</h3>
                     <pre>{{ output }}</pre>
                 </div>
                 {% else %}
-                <h3>Output:</h3>
+                <h3>輸出結果:</h3>
                 <pre class="language-python">{{ output }}</pre>
                 {% endif %}
             </div>
             {% endif %}
 
             <div class="history">
-                <h3>Execution History:</h3>
+                <h3>執行歷史:</h3>
                 {% for code, output in history %}
                     <div>
-                        <strong>Code:</strong>
+                        <strong>程式碼:</strong>
                         <pre class="language-python">{{ code }}</pre>
-                        <strong>Output:</strong>
+                        <strong>輸出結果:</strong>
                         <pre>{{ output }}</pre>
                     </div>
                     <hr>
@@ -151,5 +149,38 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/prism.min.js"></script>
+    <script>
+        function createNewFile() {
+            const filename = prompt("請輸入檔案名稱:");
+            if (filename) {
+                const content = prompt("請輸入檔案內容:");
+                if (content) {
+                    // 儲存檔案到 IndexedDB
+                    saveFile(filename, content);
+                }
+            }
+        }
+
+        function saveFile(filename, content) {
+            fetch('/save_file', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ filename, content })
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                // 更新檔案列表
+                updateFileList();
+            });
+        }
+
+        function updateFileList() {
+            // 從 IndexedDB 獲取檔案並更新檔案列表
+            // 此處需要編寫相關代碼
+        }
+    </script>
 </body>
 </html>
