@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>錯誤</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
+        pre { background: #f4f4f4; padding: 10px; border: 1px solid #ccc; overflow: auto; }
+        input, textarea { width: 300px; margin: 10px 0; padding: 10px; }
+        button { padding: 10px 15px; }
+    </style>
+    <script>
+        function copyErrorCode() {
+            const errorCode = document.getElementById("error-code");
+            errorCode.select();
+            document.execCommand("copy");
+            alert("錯誤代碼已複製！");
+        }
+    </script>
+</head>
+<body>
+    <h1>錯誤</h1>
+    <pre id="error-code">{{ error_message }}</pre>
+    <button onclick="copyErrorCode()">複製錯誤代碼</button>
+    
+    <h2>聯絡網站管理員</h2>
+    <form action="mailto:oinktech2024@gmail.com" method="post" enctype="text/plain">
+        <input type="email" name="email" placeholder="您的郵箱" required><br>
+        <input type="text" name="subject" placeholder="主旨" required><br>
+        <textarea name="message" placeholder="內文" rows="5" required></textarea><br>
+        <button type="submit">發送郵件</button>
+    </form>
+    <p>如有疑問，請聯絡網站管理員：<a href="mailto:oinktech2024@gmail.com">oinktech2024@gmail.com</a></p>
+</body>
+</html>
