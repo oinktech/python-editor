@@ -1,7 +1,8 @@
 import sys
 import io
 import subprocess
-from flask import Flask, render_template, request, escape
+from flask import Flask, render_template, request
+from markupsafe import escape  # 匯入 escape 函數
 from flask_wtf import FlaskForm
 from wtforms import TextAreaField, SubmitField
 from wtforms.validators import DataRequired
