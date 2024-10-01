@@ -4,3 +4,4 @@ WTForms
 markupsafe
 redis
 psutil
+python-dotenv
