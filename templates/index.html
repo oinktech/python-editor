@@ -24,10 +24,6 @@
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
             transition: transform 0.3s, box-shadow 0.3s;
         }
-        .container:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
-        }
         h1 {
             text-align: center;
         }
@@ -53,8 +49,6 @@
             outline: none;
         }
         .btn-primary {
-            display: inline-flex;
-            align-items: center;
             background-color: #007bff;
             color: #fff;
             border: none;
@@ -75,9 +69,6 @@
             border-radius: 8px;
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
             transition: transform 0.3s;
-        }
-        .output:hover, .history:hover {
-            transform: scale(1.01);
         }
         pre {
             white-space: pre-wrap;
@@ -130,9 +121,6 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             text-align: center;
             transition: transform 0.3s;
-        }
-        .modal-content p {
-            margin: 20px 0;
         }
         .btn-close {
             background-color: #dc3545;
@@ -230,7 +218,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/prism.min.js"></script>
     <script>
         let currentPage = 1;
-        const itemsPerPage = 5; // 每頁顯示的項目數
+        const itemsPerPage = 5;
 
         function filterHistory() {
             const searchInput = document.getElementById('search-input').value.toLowerCase();
@@ -238,11 +226,7 @@
             historyItems.forEach((item) => {
                 const code = item.querySelector('pre.language-python').innerText.toLowerCase();
                 const output = item.querySelector('pre').innerText.toLowerCase();
-                if (code.includes(searchInput) || output.includes(searchInput)) {
-                    item.style.display = '';
-                } else {
-                    item.style.display = 'none';
-                }
+                item.style.display = code.includes(searchInput) || output.includes(searchInput) ? '' : 'none';
             });
         }
 
@@ -277,14 +261,6 @@
             document.querySelector('#code-form').appendChild(hiddenInput);
             document.querySelector('#code-form').submit();
         });
-
-        function showInstallModal() {
-            document.querySelector('#modal').style.display = 'flex';
-        }
-
-        function showInputModal() {
-            document.querySelector('#input-modal').style.display = 'flex';
-        }
     </script>
 </body>
 </html>
