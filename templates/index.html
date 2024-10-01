@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Python 編輯器</title>
+    <title>Python 解釋器</title>
     <link rel="icon" href="https://oinktech.github.io/images/favicon.ico">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/themes/prism.min.css">
     <link href='https://unpkg.com/boxicons@2.0.9/css/boxicons.min.css' rel='stylesheet'>
@@ -23,7 +23,11 @@
             padding: 30px;
             border-radius: 15px;
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-            transition: transform 0.3s, box-shadow 0.3s;
+            transition: transform 0.3s;
+            position: relative;
+        }
+        .container:hover {
+            transform: translateY(-5px);
         }
         h1 {
             text-align: center;
@@ -43,25 +47,21 @@
             border-radius: 8px;
             resize: none;
             font-family: 'Courier New', Courier, monospace;
-            transition: border-color 0.3s;
-        }
-        textarea:focus {
-            border-color: #007bff;
-            outline: none;
         }
         .btn-primary {
+            display: inline-flex;
+            align-items: center;
             background-color: #007bff;
             color: #fff;
             border: none;
             padding: 10px 25px;
             border-radius: 4px;
             cursor: pointer;
-            transition: background-color 0.3s, transform 0.2s;
+            transition: background-color 0.3s;
             font-size: 16px;
         }
         .btn-primary:hover {
             background-color: #0056b3;
-            transform: scale(1.05);
         }
         .output, .history {
             margin-top: 30px;
@@ -69,7 +69,6 @@
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-            transition: transform 0.3s;
         }
         pre {
             white-space: pre-wrap;
@@ -87,40 +86,24 @@
             max-height: 300px;
         }
         .pagination {
-            display: flex;
-            justify-content: center;
             margin-top: 20px;
+            text-align: center;
         }
         .pagination button {
             margin: 0 5px;
-            padding: 5px 10px;
-            border: 1px solid #007bff;
-            border-radius: 5px;
-            background-color: #fff;
-            color: #007bff;
-            cursor: pointer;
-        }
-        .pagination button:hover {
-            background-color: #007bff;
-            color: white;
         }
         #search-input {
-            width: 100%;
+            margin-top: 10px;
             padding: 10px;
             border: 1px solid #ddd;
             border-radius: 8px;
-            margin-top: 10px;
-            transition: border-color 0.3s;
-        }
-        #search-input:focus {
-            border-color: #007bff;
-            outline: none;
+            width: 100%;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1><i class='bx bx-code-alt'></i> Python 編輯器</h1>
+        <h1><i class='bx bx-code-alt'></i> Python 解釋器</h1>
         <form id="code-form" method="POST">
             {{ form.hidden_tag() }}
             <div class="form-group">
@@ -168,22 +151,22 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/prism.min.js"></script>
     <script>
-        let currentPage = {{ current_page }};
-        const itemsPerPage = {{ items_per_page }};
-
-        function filterHistory() {
-            const searchInput = document.getElementById('search-input').value.toLowerCase();
-            const historyItems = document.querySelectorAll('.history-item');
-            historyItems.forEach((item) => {
-                const code = item.querySelector('pre.language-python').innerText.toLowerCase();
-                const output = item.querySelector('pre').innerText.toLowerCase();
-                item.style.display = code.includes(searchInput) || output.includes(searchInput) ? '' : 'none';
-            });
+        function changePage(direction) {
+            const currentPage = {{ current_page }};
+            const totalPages = {{ total_pages }};
+            const newPage = currentPage + direction;
+            if (newPage >= 1 && newPage <= totalPages) {
+                window.location.href = '?page=' + newPage;
+            }
         }
 
-        function changePage(direction) {
-            currentPage += direction;
-            window.location.href = `/?page=${currentPage}`;
+        function filterHistory() {
+            const input = document.getElementById('search-input').value.toLowerCase();
+            const historyItems = document.querySelectorAll('.history-item');
+            historyItems.forEach(item => {
+                const code = item.querySelector('pre.language-python').innerText.toLowerCase();
+                item.style.display = code.includes(input) ? '' : 'none';
+            });
         }
     </script>
 </body>
