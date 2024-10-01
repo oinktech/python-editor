@@ -1,94 +1,56 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>系統管理</title>
+    <title>管理頁面</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f7f6;
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f9;
             margin: 0;
-            padding: 0;
+            padding: 20px;
+        }
+        h1, h2 {
+            text-align: center;
             color: #333;
         }
-
-        h1 {
+        p {
+            font-size: 18px;
+            color: #555;
             text-align: center;
-            background-color: #4CAF50;
-            color: white;
-            padding: 20px 0;
-            margin: 0;
         }
-
-        h2 {
-            color: #4CAF50;
-            border-bottom: 2px solid #4CAF50;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-        }
-
-        ul {
-            list-style-type: none;
-            padding: 0;
-        }
-
-        ul li {
-            background-color: white;
-            padding: 15px;
-            margin: 10px 0;
-            border-radius: 8px;
+        .info-box {
+            background-color: #fff;
+            border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            font-size: 16px;
+            padding: 20px;
+            margin: 20px auto;
+            max-width: 500px;
+            animation: fadeIn 1s ease-out;
         }
-
-        ul li::before {
-            content: '•';
-            color: #4CAF50;
-            font-weight: bold;
-            display: inline-block;
-            width: 1em;
-            margin-left: -1em;
-        }
-
-        .container {
-            max-width: 800px;
-            margin: 40px auto;
-            padding: 0 20px;
-        }
-
-        @media (max-width: 768px) {
-            body {
-                font-size: 14px;
-            }
-
-            ul li {
-                font-size: 14px;
-                padding: 10px;
-            }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
 <body>
-    <h1>系統資源和網站流量監控</h1>
+    <h1>管理員面板</h1>
+    <div class="info-box">
+        <p>訪客 IP 地址: {{ ip_address }}</p>
+    </div>
+    <h2>系統資源使用情況</h2>
+    <div class="info-box">
+        <p>CPU 使用率: {{ system_info.cpu_usage }}%</p>
+        <p>記憶體使用情況: {{ system_info.memory_usage.used }}GB / {{ system_info.memory_usage.total }}GB</p>
+        <p>磁碟使用情況: {{ system_info.disk_usage.used }}GB / {{ system_info.disk_usage.total }}GB</p>
+    </div>
 
-    <div class="container">
-        <h2>系統資源使用情況：</h2>
-        <ul>
-            <li>CPU 使用率: {{ system_info.cpu_usage }}%</li>
-            <li>磁碟總量: {{ system_info.disk_usage.total }} GB</li>
-            <li>磁碟已用: {{ system_info.disk_usage.used }} GB</li>
-            <li>磁碟可用: {{ system_info.disk_usage.free }} GB</li>
-            <li>記憶體總量: {{ system_info.memory_usage.total }} GB</li>
-            <li>記憶體已用: {{ system_info.memory_usage.used }} GB</li>
-            <li>記憶體可用: {{ system_info.memory_usage.free }} GB</li>
-        </ul>
-
-        <h2>網站流量監控：</h2>
-        <ul>
-            <li>當前在線人數: {{ current_visitors }}</li>
-            <li>歷史總訪問人數: {{ total_visits }}</li>
-        </ul>
+    <h2>網站流量信息</h2>
+    <div class="info-box">
+        <p>當前在線人數: {{ current_visitors }}</p>
+        <p>歷史總訪問人數: {{ total_visits }}</p>
     </div>
 </body>
 </html>
