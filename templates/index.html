@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Python 解釋器</title>
+    <link rel="icon" href="https://oinktech.github.io/images/favicon.ico">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/themes/prism.min.css">
     <link href='https://unpkg.com/boxicons@2.0.9/css/boxicons.min.css' rel='stylesheet'>
     <style>
@@ -125,6 +126,9 @@
             border: 1px solid #ddd;
             border-radius: 8px;
         }
+        .pip-instructions {
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
@@ -138,6 +142,16 @@
             </div>
             <button type="submit" class="btn-primary"><i class='bx bx-play-circle'></i> 執行</button>
         </form>
+
+        <div class="pip-instructions">
+            <h3>Pip 指令提示：</h3>
+            <ul>
+                <li><strong>安装模组：</strong> !pip install <em>模组名</em></li>
+                <li><strong>卸载模组：</strong> !pip uninstall <em>模组名</em></li>
+                <li><strong>更新模组：</strong> !pip install --upgrade <em>模组名</em></li>
+                <li><strong>列出所有已安装模组：</strong> !pip list</li>
+            </ul>
+        </div>
 
         {% if output is not none %}
         <div class="output">
@@ -153,7 +167,19 @@
         </div>
         {% endif %}
 
-        
+        <div class="history">
+            <h3>執行歷史：</h3>
+            {% for code, output in history %}
+                <div>
+                    <strong>程式碼：</strong>
+                    <pre class="language-python">{{ code }}</pre>
+                    <strong>輸出結果：</strong>
+                    <pre>{{ output }}</pre>
+                </div>
+                <hr>
+            {% endfor %}
+        </div>
+    </div>
 
     <!-- 模組安裝進度顯示框 -->
     <div id="modal" class="modal">
@@ -174,25 +200,6 @@
             <button id="submit-input" class="btn-primary">提交</button>
         </div>
     </div>
-    <script>
-    document.addEventListener('DOMContentLoaded', (event) => {
-        // 恢复输入框内容
-        const savedCode = localStorage.getItem('savedCode');
-        if (savedCode) {
-            document.querySelector('textarea[name="code"]').value = savedCode;
-        }
-
-        // 当输入框内容变化时，保存内容
-        document.querySelector('textarea[name="code"]').addEventListener('input', function() {
-            localStorage.setItem('savedCode', this.value);
-        });
-
-        // 清除保存的代码（例如在表单提交后）
-        document.querySelector('#code-form').addEventListener('submit', function() {
-            localStorage.removeItem('savedCode');
-        });
-    });
-</script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/prism.min.js"></script>
     <script>
@@ -202,7 +209,11 @@
 
         document.querySelector('#submit-input').addEventListener('click', function() {
             var userInput = document.querySelector('#user-input').value;
-            document.querySelector('form').append('<input type="hidden" name="user_input" value="'+userInput+'">');
+            var hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.name = 'user_input';
+            hiddenInput.value = userInput;
+            document.querySelector('form').appendChild(hiddenInput);
             document.querySelector('form').submit();
         });
 
