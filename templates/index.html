@@ -10,94 +10,86 @@
     <style>
         body {
             font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
             background-color: #f0f0f0;
-            padding: 50px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        .container {
-            width: 80%;
-            max-width: 1000px;
-            background-color: #ffffff;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-            transition: transform 0.3s;
-            position: relative;
-        }
-        .container:hover {
-            transform: translateY(-5px);
         }
         h1 {
             text-align: center;
         }
-        form {
-            margin-top: 20px;
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
-        label {
-            font-weight: bold;
-            font-size: 16px;
-        }
-        textarea {
-            width: 100%;
-            height: 200px;
-            padding: 15px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            resize: none;
-            font-family: 'Courier New', Courier, monospace;
+        .form-group {
+            margin-bottom: 15px;
         }
         .btn-primary {
-            display: inline-flex;
-            align-items: center;
+            display: block;
+            width: 100%;
+            padding: 10px;
             background-color: #007bff;
-            color: #fff;
+            color: white;
             border: none;
-            padding: 10px 25px;
-            border-radius: 4px;
+            border-radius: 5px;
             cursor: pointer;
-            transition: background-color 0.3s;
-            font-size: 16px;
         }
-        .btn-primary:hover {
-            background-color: #0056b3;
-        }
-        .output, .history {
-            margin-top: 30px;
-            background-color: #ffffff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-        }
-        pre {
-            white-space: pre-wrap;
-            background-color: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            font-size: 14px;
+        .output {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f9f9f9;
         }
         .error {
-            color: #dc3545;
-            font-weight: bold;
+            color: red;
         }
         .history {
-            overflow-y: auto;
-            max-height: 300px;
-        }
-        .pagination {
             margin-top: 20px;
-            text-align: center;
-        }
-        .pagination button {
-            margin: 0 5px;
         }
         #search-input {
-            margin-top: 10px;
+            margin-bottom: 10px;
             padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
             width: 100%;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .pagination {
+            margin-top: 10px;
+            text-align: center;
+        }
+        #modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgb(0,0,0);
+            background-color: rgba(0,0,0,0.4);
+            padding-top: 60px;
+        }
+        #modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+        }
+        #progress {
+            width: 100%;
+            background-color: #f3f3f3;
+        }
+        #progress-bar {
+            width: 0;
+            height: 30px;
+            background-color: #4caf50;
         }
     </style>
 </head>
@@ -149,6 +141,17 @@
         </div>
     </div>
 
+    <div id="modal">
+        <div id="modal-content">
+            <span id="close" style="float:right; cursor:pointer;">&times;</span>
+            <h2>下載進度</h2>
+            <div id="progress">
+                <div id="progress-bar"></div>
+            </div>
+            <p id="progress-text">正在下載...</p>
+        </div>
+    </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/prism.min.js"></script>
     <script>
         function changePage(direction) {
@@ -164,9 +167,28 @@
             const input = document.getElementById('search-input').value.toLowerCase();
             const historyItems = document.querySelectorAll('.history-item');
             historyItems.forEach(item => {
-                const code = item.querySelector('pre.language-python').innerText.toLowerCase();
-                item.style.display = code.includes(input) ? '' : 'none';
+                const code = item.querySelector('pre').innerText.toLowerCase();
+                if (code.includes(input)) {
+                    item.style.display = '';
+                } else {
+                    item.style.display = 'none';
+                }
             });
+        }
+
+        function showModal() {
+            document.getElementById('modal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('modal').style.display = 'none';
+        }
+
+        document.getElementById('close').onclick = closeModal;
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('modal')) {
+                closeModal();
+            }
         }
     </script>
 </body>
