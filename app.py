@@ -1,8 +1,9 @@
 import sys
 import io
 import subprocess
+import shutil  # 新增部分：匯入 shutil 來檢查磁碟使用情況
 from flask import Flask, render_template, request
-from markupsafe import escape  # 匯入 escape 函數
+from markupsafe import escape
 from flask_wtf import FlaskForm
 from wtforms import TextAreaField, SubmitField
 from wtforms.validators import DataRequired
@@ -27,7 +28,6 @@ def execute_python(code, user_input=None):
         if user_input:
             sys.stdin = io.StringIO(user_input)
 
-        # Handle specific pip commands safely
         if code.startswith('!pip install'):
             module = code.split(' ')[-1]
             install_module(module)
@@ -40,13 +40,9 @@ def execute_python(code, user_input=None):
             output = f"模組 {module} 更新成功！"
         elif code.startswith('!pip list'):
             output = list_installed_modules()
-
-        # For other unknown "!" commands, restrict them and return error
         elif code.startswith('!'):
             output = "⚠️ 此命令不允許執行。⚠️"
-
         else:
-            # Execute Python code
             exec(code)
             output = sys.stdout.getvalue()
 
@@ -56,7 +52,6 @@ def execute_python(code, user_input=None):
     finally:
         sys.stdout = stdout
         sys.stdin = stdin
-        # Escape output to prevent XSS
         output = escape(output)
         execution_history.append((code, output))
 
@@ -84,6 +79,15 @@ def list_installed_modules():
     except subprocess.CalledProcessError as e:
         return f"模組列出失敗：{e}"
 
+def get_disk_usage():
+    """獲取當前磁碟區的使用情況"""
+    total, used, free = shutil.disk_usage("/")
+    return {
+        "total": total // (2**30),  # Convert bytes to GB
+        "used": used // (2**30),
+        "free": free // (2**30)
+    }
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
     form = CodeForm()
@@ -95,6 +99,11 @@ def index():
         output = execute_python(code, user_input)
 
     return render_template('index.html', form=form, output=output, history=execution_history)
+
+@app.route('/admin')
+def admin():
+    disk_usage = get_disk_usage()
+    return render_template('admin.html', disk_usage=disk_usage)
 
 if __name__ == '__main__':
     app.run(debug=True, port=10000, host='0.0.0.0')
