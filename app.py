@@ -31,9 +31,8 @@ def execute_python(code, user_input=None):
             install_module(module)
             output = f"模組 {module} 安裝成功！"
         elif code.startswith('!pip uninstall'):
-            module = code.split(' ')[-1]
-            uninstall_module(module)
-            output = f"模組 {module} 卸載成功！"
+            
+            output = f"⚠️由於安全性及相關考量，因此已移除該功能。⚠️"
         elif code.startswith('!pip install --upgrade'):
             module = code.split(' ')[-1]
             update_module(module)
