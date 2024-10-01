@@ -2,4 +2,4 @@ Flask
 Flask-WTF
 WTForms
 markupsafe
-
+redis
