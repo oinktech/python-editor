@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, jsonify, session
-import redis
+import sqlite3
 import time
 import sys
 import io
@@ -14,9 +14,6 @@ from wtforms.validators import DataRequired
 app = Flask(__name__)
 app.secret_key = "your_secret_key_here"
 
-# 配置 Redis 連接
-r = redis.StrictRedis(host='localhost', port=6379, db=0)
-
 # 設定 session 過期時間，假設以秒為單位
 SESSION_TIMEOUT = 300
 
@@ -27,6 +24,30 @@ class CodeForm(FlaskForm):
 
 # 儲存執行歷史
 execution_history = []
+
+# 連接 SQLite 數據庫
+def get_db_connection():
+    conn = sqlite3.connect('visitors.db')
+    conn.row_factory = sqlite3.Row
+    return conn
+
+# 初始化數據庫
+def init_db():
+    with get_db_connection() as conn:
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS visitors (
+                user_id TEXT PRIMARY KEY,
+                last_seen INTEGER
+            )
+        ''')
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS total_visits (
+                visit_count INTEGER
+            )
+        ''')
+        # 初始化總訪問人數
+        if conn.execute('SELECT COUNT(*) FROM total_visits').fetchone()[0] == 0:
+            conn.execute('INSERT INTO total_visits (visit_count) VALUES (0)')
 
 # 執行 Python 程式碼的函數
 def execute_python(code, user_input=None):
@@ -47,7 +68,7 @@ def execute_python(code, user_input=None):
             install_module(module)
             output = f"模組 {module} 安裝成功！"
         elif code.startswith('!pip uninstall'):
-            output = f"⚠️由於安全性及相關考量，因此已移除該功能。⚠️"
+            output = "⚠️由於安全性及相關考量，因此已移除該功能。⚠️"
         elif code.startswith('!pip install --upgrade'):
             module = code.split(' ')[-1]
             update_module(module)
@@ -122,31 +143,32 @@ def get_system_info():
 
 # 追蹤訪問者數據
 def track_visitor():
-    # 如果 session 沒有 'user_id'，則生成一個唯一 ID
-    if 'user_id' not in session:
-        session['user_id'] = time.time()
+    with get_db_connection() as conn:
+        # 如果 session 沒有 'user_id'，則生成一個唯一 ID
+        if 'user_id' not in session:
+            session['user_id'] = str(time.time())
 
-    user_id = session['user_id']
-    current_time = int(time.time())
+        user_id = session['user_id']
+        current_time = int(time.time())
 
-    # 在 Redis 中記錄這位訪問者
-    r.hset('visitors', user_id, current_time)
+        # 在 SQLite 中記錄這位訪問者
+        conn.execute('INSERT OR REPLACE INTO visitors (user_id, last_seen) VALUES (?, ?)', (user_id, current_time))
 
-    # 清理已過期的訪問者
-    for visitor, last_seen in r.hgetall('visitors').items():
-        if current_time - int(last_seen) > SESSION_TIMEOUT:
-            r.hdel('visitors', visitor)
+        # 清理已過期的訪問者
+        conn.execute('DELETE FROM visitors WHERE last_seen < ?', (current_time - SESSION_TIMEOUT,))
 
-    # 增加歷史訪問人數
-    r.incr('total_visits')
+        # 增加歷史訪問人數
+        conn.execute('UPDATE total_visits SET visit_count = visit_count + 1')
 
 # 查看目前在線人數
 def get_current_visitors():
-    return r.hlen('visitors')
+    with get_db_connection() as conn:
+        return conn.execute('SELECT COUNT(*) FROM visitors').fetchone()[0]
 
 # 查看歷史總訪問人數
 def get_total_visits():
-    return int(r.get('total_visits') or 0)
+    with get_db_connection() as conn:
+        return conn.execute('SELECT visit_count FROM total_visits').fetchone()[0]
 
 # 主頁路由，處理 Python 程式碼執行
 @app.route('/', methods=['GET', 'POST'])
@@ -178,4 +200,5 @@ def system_info():
     return jsonify(info)
 
 if __name__ == '__main__':
+    init_db()  # 初始化數據庫
     app.run(debug=True, port=10000, host='0.0.0.0')
