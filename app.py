@@ -203,6 +203,16 @@ def index():
         output = execute_python(code, user_input)
 
     return render_template('index.html', form=form, output=output, history=execution_history)
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('404.html'), 404
+
+# 处理其他错误
+@app.errorhandler(Exception)
+def handle_error(e):
+    # 获取错误信息
+    error_message = str(e)
+    return render_template('error.html', error_message=error_message), 500
 
 # 管理頁面路由，顯示系統資源使用情況和網站流量信息
 @app.route('/admin')
