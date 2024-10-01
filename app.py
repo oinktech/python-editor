@@ -63,9 +63,9 @@ def index():
     if form.validate_on_submit():
         code = form.code.data
         output = execute_python(code)
-        return render_template('index.html', form=form, output=output, history=execution_history, paginated_history=paginated_history, current_page=page, total_pages=total_pages, items_per_page=items_per_page)
+        return render_template('index.html', form=form, output=output, paginated_history=paginated_history, current_page=page, total_pages=total_pages, items_per_page=items_per_page)
 
-    return render_template('index.html', form=form, history=execution_history, paginated_history=paginated_history, current_page=page, total_pages=total_pages, items_per_page=items_per_page)
+    return render_template('index.html', form=form, paginated_history=paginated_history, current_page=page, total_pages=total_pages, items_per_page=items_per_page)
 
 @app.route('/install_module', methods=['POST'])
 def install_module_route():
