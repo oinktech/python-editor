@@ -84,7 +84,7 @@
             overflow-y: auto;
             max-height: 300px;
         }
-        .modal {
+        .modal, .input-modal {
             display: none;
             position: fixed;
             top: 0;
@@ -95,7 +95,7 @@
             justify-content: center;
             align-items: center;
         }
-        .modal-content {
+        .modal-content, .input-modal-content {
             background-color: #fff;
             padding: 30px;
             border-radius: 10px;
@@ -115,6 +115,15 @@
         }
         .btn-close:hover {
             background-color: #c82333;
+        }
+        .input-field {
+            margin-top: 20px;
+        }
+        .input-field input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
         }
     </style>
 </head>
@@ -167,19 +176,36 @@
         </div>
     </div>
 
-    <script>
-        const modal = document.getElementById('modal');
-        const closeBtn = document.getElementById('close-btn');
-
-        closeBtn.onclick = function() {
-            modal.style.display = 'none';
-        }
-
-        function showModal() {
-            modal.style.display = 'flex';
-        }
-    </script>
+    <!-- 虛擬輸入框 -->
+    <div id="input-modal" class="input-modal">
+        <div class="input-modal-content">
+            <h3>請輸入資料</h3>
+            <div class="input-field">
+                <input type="text" id="user-input" placeholder="在這裡輸入...">
+            </div>
+            <button id="submit-input" class="btn-primary">提交</button>
+        </div>
+    </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/prism.min.js"></script>
+    <script>
+        document.querySelector('#close-btn').addEventListener('click', function() {
+            document.querySelector('#modal').style.display = 'none';
+        });
+
+        document.querySelector('#submit-input').addEventListener('click', function() {
+            var userInput = document.querySelector('#user-input').value;
+            document.querySelector('form').append('<input type="hidden" name="user_input" value="'+userInput+'">');
+            document.querySelector('form').submit();
+        });
+
+        function showInstallModal() {
+            document.querySelector('#modal').style.display = 'flex';
+        }
+
+        function showInputModal() {
+            document.querySelector('#input-modal').style.display = 'flex';
+        }
+    </script>
 </body>
 </html>
