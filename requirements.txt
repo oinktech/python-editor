@@ -15,9 +15,6 @@ Flask
 Django
 Requests
 Scrapy
-SQLAlchemy
-OpenCV
-Pillow
 PyTorch
 Turtle
 pytest
