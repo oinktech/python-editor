@@ -3,7 +3,7 @@ import io
 import subprocess
 import shutil
 import psutil  # 新增：匯入 psutil 來監控系統資源
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 from markupsafe import escape
 from flask_wtf import FlaskForm
 from wtforms import TextAreaField, SubmitField
@@ -12,16 +12,20 @@ from wtforms.validators import DataRequired
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key_here'
 
+# 表單類別，用於輸入 Python 程式碼
 class CodeForm(FlaskForm):
     code = TextAreaField('輸入您的 Python 程式碼：', validators=[DataRequired()])
     submit = SubmitField('執行')
 
+# 儲存執行歷史
 execution_history = []
 
+# 執行 Python 程式碼的函數
 def execute_python(code, user_input=None):
     global execution_history
     output = ""
     try:
+        # 重定向標準輸出與輸入
         stdout = sys.stdout
         stdin = sys.stdin
         sys.stdout = io.StringIO()
@@ -29,6 +33,7 @@ def execute_python(code, user_input=None):
         if user_input:
             sys.stdin = io.StringIO(user_input)
 
+        # 特殊命令處理
         if code.startswith('!pip install'):
             module = code.split(' ')[-1]
             install_module(module)
@@ -58,34 +63,34 @@ def execute_python(code, user_input=None):
 
     return output
 
+# 安裝 Python 模組
 def install_module(module):
-    """安全地安裝 Python 模組"""
     try:
         subprocess.run([sys.executable, "-m", "pip", "install", module], check=True, timeout=60)
     except subprocess.CalledProcessError as e:
         raise Exception(f"模組安裝失敗：{e}")
 
+# 更新 Python 模組
 def update_module(module):
-    """安全地更新 Python 模組"""
     try:
         subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", module], check=True, timeout=60)
     except subprocess.CalledProcessError as e:
         raise Exception(f"模組更新失敗：{e}")
 
+# 列出已安裝的模組
 def list_installed_modules():
-    """列出已安裝的 Python 模組"""
     try:
         result = subprocess.run([sys.executable, "-m", "pip", "list"], capture_output=True, text=True, check=True)
         return result.stdout
     except subprocess.CalledProcessError as e:
         return f"模組列出失敗：{e}"
 
+# 獲取系統資源使用情況
 def get_system_info():
-    """獲取系統資源使用情況"""
     # 磁碟使用情況
     total, used, free = shutil.disk_usage("/")
     disk_usage = {
-        "total": total // (2**30),  # Convert bytes to GB
+        "total": total // (2**30),  # 將位元組轉換為 GB
         "used": used // (2**30),
         "free": free // (2**30)
     }
@@ -107,6 +112,7 @@ def get_system_info():
         "memory_usage": memory_usage
     }
 
+# 主頁路由，處理 Python 程式碼執行
 @app.route('/', methods=['GET', 'POST'])
 def index():
     form = CodeForm()
@@ -119,10 +125,17 @@ def index():
 
     return render_template('index.html', form=form, output=output, history=execution_history)
 
+# 管理頁面路由，顯示系統資源使用情況
 @app.route('/admin')
 def admin():
     system_info = get_system_info()
     return render_template('admin.html', system_info=system_info)
 
+# 提供 JSON 格式的系統資訊
+@app.route('/system_info')
+def system_info():
+    info = get_system_info()
+    return jsonify(info)
+
 if __name__ == '__main__':
-    app.run(debug=True, port=10000, host='0.0.0.0')
+    app.run(debug=True,port=10000, host='0.0.0.0')
