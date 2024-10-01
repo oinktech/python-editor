@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Python 解釋器</title>
+    <title>Python 編輯器</title>
+    <link rel="icon" href="https://oinktech.github.io/images/favicon.ico">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/themes/prism.min.css">
     <link href='https://unpkg.com/boxicons@2.0.9/css/boxicons.min.css' rel='stylesheet'>
     <style>
@@ -103,48 +104,15 @@
             background-color: #007bff;
             color: white;
         }
-        .modal, .input-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.6);
-            justify-content: center;
-            align-items: center;
-        }
-        .modal-content, .input-modal-content {
-            background-color: #fff;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            text-align: center;
-            transition: transform 0.3s;
-        }
-        .btn-close {
-            background-color: #dc3545;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        .btn-close:hover {
-            background-color: #c82333;
-        }
-        .input-field {
-            margin-top: 20px;
-        }
-        .input-field input {
+        #search-input {
             width: 100%;
             padding: 10px;
             border: 1px solid #ddd;
             border-radius: 8px;
+            margin-top: 10px;
             transition: border-color 0.3s;
         }
-        .input-field input:focus {
+        #search-input:focus {
             border-color: #007bff;
             outline: none;
         }
@@ -152,7 +120,7 @@
 </head>
 <body>
     <div class="container">
-        <h1><i class='bx bx-code-alt'></i> Python 解釋器</h1>
+        <h1><i class='bx bx-code-alt'></i> Python 編輯器</h1>
         <form id="code-form" method="POST">
             {{ form.hidden_tag() }}
             <div class="form-group">
@@ -180,7 +148,7 @@
             <h3>執行歷史：</h3>
             <input type="text" id="search-input" placeholder="搜尋執行歷史..." oninput="filterHistory()">
             <div id="history-content">
-                {% for code, output in history %}
+                {% for code, output in paginated_history %}
                     <div class="history-item">
                         <strong>程式碼：</strong>
                         <pre class="language-python">{{ code }}</pre>
@@ -191,34 +159,17 @@
                 {% endfor %}
             </div>
             <div class="pagination">
-                <button id="prev-page" onclick="changePage(-1)">上一頁</button>
-                <button id="next-page" onclick="changePage(1)">下一頁</button>
+                <button id="prev-page" onclick="changePage(-1)" {% if current_page == 1 %}disabled{% endif %}>上一頁</button>
+                <button id="next-page" onclick="changePage(1)" {% if current_page == total_pages %}disabled{% endif %}>下一頁</button>
+                <span>第 {{ current_page }} 頁 / {{ total_pages }} 頁</span>
             </div>
-        </div>
-    </div>
-
-    <div id="modal" class="modal">
-        <div class="modal-content">
-            <h3>模組安裝進度</h3>
-            <p>正在安裝模組，請稍候...</p>
-            <button id="close-btn" class="btn-close">關閉</button>
-        </div>
-    </div>
-
-    <div id="input-modal" class="input-modal">
-        <div class="input-modal-content">
-            <h3>請輸入資料</h3>
-            <div class="input-field">
-                <input type="text" id="user-input" placeholder="在這裡輸入...">
-            </div>
-            <button id="submit-input" class="btn-primary">提交</button>
         </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/prism.min.js"></script>
     <script>
-        let currentPage = 1;
-        const itemsPerPage = 5;
+        let currentPage = {{ current_page }};
+        const itemsPerPage = {{ items_per_page }};
 
         function filterHistory() {
             const searchInput = document.getElementById('search-input').value.toLowerCase();
@@ -231,36 +182,9 @@
         }
 
         function changePage(direction) {
-            const historyItems = document.querySelectorAll('.history-item');
-            const totalItems = Array.from(historyItems).filter(item => item.style.display !== 'none').length;
-            const totalPages = Math.ceil(totalItems / itemsPerPage);
-
             currentPage += direction;
-            if (currentPage < 1) currentPage = 1;
-            if (currentPage > totalPages) currentPage = totalPages;
-
-            let visibleCount = 0;
-            historyItems.forEach((item) => {
-                if (item.style.display !== 'none') {
-                    visibleCount++;
-                    item.style.display = visibleCount > (currentPage - 1) * itemsPerPage && visibleCount <= currentPage * itemsPerPage ? '' : 'none';
-                }
-            });
+            window.location.href = `/?page=${currentPage}`;
         }
-
-        document.querySelector('#close-btn').addEventListener('click', function() {
-            document.querySelector('#modal').style.display = 'none';
-        });
-
-        document.querySelector('#submit-input').addEventListener('click', function() {
-            var userInput = document.querySelector('#user-input').value;
-            var hiddenInput = document.createElement('input');
-            hiddenInput.type = 'hidden';
-            hiddenInput.name = 'user_input';
-            hiddenInput.value = userInput;
-            document.querySelector('#code-form').appendChild(hiddenInput);
-            document.querySelector('#code-form').submit();
-        });
     </script>
 </body>
 </html>
