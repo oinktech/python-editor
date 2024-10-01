@@ -3,93 +3,99 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Python 解釋器</title>
     <link rel="icon" href="https://oinktech.github.io/images/favicon.ico">
+    <title>Python 解釋器</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/themes/prism.min.css">
     <link href='https://unpkg.com/boxicons@2.0.9/css/boxicons.min.css' rel='stylesheet'>
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
             background-color: #f0f0f0;
+            padding: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            width: 80%;
+            max-width: 800px;
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
         }
         h1 {
             text-align: center;
+            margin-bottom: 20px;
         }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        form {
+            margin-top: 20px;
         }
-        .form-group {
-            margin-bottom: 15px;
+        label {
+            font-weight: bold;
+            font-size: 16px;
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            resize: none;
+            font-family: 'Courier New', Courier, monospace;
         }
         .btn-primary {
-            display: block;
-            width: 100%;
-            padding: 10px;
             background-color: #007bff;
-            color: white;
+            color: #fff;
             border: none;
-            border-radius: 5px;
+            padding: 10px 25px;
+            border-radius: 4px;
             cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
         }
         .output {
-            margin-top: 20px;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            background-color: #f9f9f9;
+            margin-top: 30px;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
         }
         .error {
-            color: red;
+            color: #dc3545;
+            font-weight: bold;
         }
-        .history {
-            margin-top: 20px;
-        }
-        #search-input {
-            margin-bottom: 10px;
-            padding: 10px;
-            width: 100%;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-        .pagination {
-            margin-top: 10px;
-            text-align: center;
-        }
-        #modal {
+        .modal {
             display: none;
             position: fixed;
-            z-index: 1000;
-            left: 0;
             top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
-            overflow: auto;
-            background-color: rgb(0,0,0);
-            background-color: rgba(0,0,0,0.4);
-            padding-top: 60px;
+            background: rgba(0, 0, 0, 0.6);
+            justify-content: center;
+            align-items: center;
         }
-        #modal-content {
-            background-color: #fefefe;
-            margin: 5% auto;
-            padding: 20px;
-            border: 1px solid #888;
-            width: 80%;
+        .modal-content {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
         }
-        #progress {
+        .progress {
             width: 100%;
             background-color: #f3f3f3;
+            border-radius: 5px;
+            margin-top: 10px;
         }
-        #progress-bar {
+        .progress-bar {
             width: 0;
-            height: 30px;
-            background-color: #4caf50;
+            height: 20px;
+            background-color: #007bff;
+            border-radius: 5px;
+            transition: width 0.4s;
         }
     </style>
 </head>
@@ -118,77 +124,51 @@
             {% endif %}
         </div>
         {% endif %}
-
-        <div class="history">
-            <h3>執行歷史：</h3>
-            <input type="text" id="search-input" placeholder="搜尋執行歷史..." oninput="filterHistory()">
-            <div id="history-content">
-                {% for code, output in paginated_history %}
-                    <div class="history-item">
-                        <strong>程式碼：</strong>
-                        <pre class="language-python">{{ code }}</pre>
-                        <strong>輸出結果：</strong>
-                        <pre>{{ output }}</pre>
-                    </div>
-                    <hr>
-                {% endfor %}
-            </div>
-            <div class="pagination">
-                <button id="prev-page" onclick="changePage(-1)" {% if current_page == 1 %}disabled{% endif %}>上一頁</button>
-                <button id="next-page" onclick="changePage(1)" {% if current_page == total_pages %}disabled{% endif %}>下一頁</button>
-                <span>第 {{ current_page }} 頁 / {{ total_pages }} 頁</span>
-            </div>
-        </div>
     </div>
 
-    <div id="modal">
-        <div id="modal-content">
-            <span id="close" style="float:right; cursor:pointer;">&times;</span>
-            <h2>下載進度</h2>
-            <div id="progress">
-                <div id="progress-bar"></div>
+    <!-- 模組安裝進度顯示框 -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <h3>模組安裝進度</h3>
+            <p id="modal-message">正在安裝模組，請稍候...</p>
+            <div class="progress">
+                <div id="progress-bar" class="progress-bar"></div>
             </div>
-            <p id="progress-text">正在下載...</p>
+            <button id="close-btn" class="btn-primary">關閉</button>
         </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/prism.min.js"></script>
     <script>
-        function changePage(direction) {
-            const currentPage = {{ current_page }};
-            const totalPages = {{ total_pages }};
-            const newPage = currentPage + direction;
-            if (newPage >= 1 && newPage <= totalPages) {
-                window.location.href = '?page=' + newPage;
-            }
-        }
+        document.querySelector('#close-btn').addEventListener('click', function() {
+            document.querySelector('#modal').style.display = 'none';
+        });
 
-        function filterHistory() {
-            const input = document.getElementById('search-input').value.toLowerCase();
-            const historyItems = document.querySelectorAll('.history-item');
-            historyItems.forEach(item => {
-                const code = item.querySelector('pre').innerText.toLowerCase();
-                if (code.includes(input)) {
-                    item.style.display = '';
-                } else {
-                    item.style.display = 'none';
-                }
+        document.querySelector('#code-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            showInstallModal(); // 顯示模態框
+            const formData = new FormData(this);
+            fetch(this.action, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                updateProgress(data.progress);
+                document.querySelector('#modal-message').innerText = data.message;
+            })
+            .catch(error => {
+                console.error('Error:', error);
             });
+        });
+
+        function showInstallModal() {
+            document.querySelector('#modal').style.display = 'flex';
         }
 
-        function showModal() {
-            document.getElementById('modal').style.display = 'block';
-        }
-
-        function closeModal() {
-            document.getElementById('modal').style.display = 'none';
-        }
-
-        document.getElementById('close').onclick = closeModal;
-        window.onclick = function(event) {
-            if (event.target == document.getElementById('modal')) {
-                closeModal();
-            }
+        function updateProgress(progress) {
+            const progressBar = document.getElementById('progress-bar');
+            progressBar.style.width = progress + '%';
         }
     </script>
 </body>
