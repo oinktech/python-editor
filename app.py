@@ -18,11 +18,11 @@ execution_history = []
 def execute_python(code, user_input=None):
     global execution_history
     output = ""
+    stdout = sys.stdout
+    stdin = sys.stdin
+    sys.stdout = io.StringIO()
+    
     try:
-        stdout = sys.stdout
-        stdin = sys.stdin
-        sys.stdout = io.StringIO()
-
         if user_input:
             sys.stdin = io.StringIO(user_input)
 
@@ -30,17 +30,16 @@ def execute_python(code, user_input=None):
             module = code.split(' ')[-1]
             output = install_module(module)
         else:
-            exec(code)
+            exec(code, globals())
             output = sys.stdout.getvalue()
 
     except Exception as e:
         output = f"錯誤：{str(e)}"
-    
     finally:
         sys.stdout = stdout
         sys.stdin = stdin
-        execution_history.append((code, output))
 
+    execution_history.append((code, output))
     return output
 
 def install_module(module):
@@ -54,12 +53,9 @@ def install_module(module):
 def index():
     form = CodeForm()
     output = None
-    user_input = request.form.get('user_input')
-
     if form.validate_on_submit():
-        code = form.code.data.strip()
-        output = execute_python(code, user_input)
-
+        code = form.code.data
+        output = execute_python(code)
     return render_template('index.html', form=form, output=output, history=execution_history)
 
 @app.route('/install_module', methods=['POST'])
@@ -72,4 +68,4 @@ def install_module_route():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True, port=10000, host='0.0.0.0')
+    app.run(debug=True,host='0.0.0.0',port=10000)
