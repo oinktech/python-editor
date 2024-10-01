@@ -7,7 +7,7 @@
     <link rel="icon" href="https://oinktech.github.io/images/favicon.ico">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/themes/prism.min.css">
     <link href='https://unpkg.com/boxicons@2.0.9/css/boxicons.min.css' rel='stylesheet'>
-        <style>
+    <style>
         body {
             font-family: Arial, sans-serif;
             background-color: #f0f0f0;
@@ -152,11 +152,12 @@
         </form>
 
         <div class="news">
-    <h3>最新消息：</h3>
-    <div class="news-item">📢 新增了 pip 指令功能，現在可以安裝、卸載及更新模組！</div>
-    <div class="news-item">🔧 更新了界面設計，讓使用者體驗更佳！</div>
-    <div class="news-item">✨ 近期計劃增加更多功能，敬請期待！</div>
-</div>
+            <h3>最新消息：</h3>
+            <div class="news-item">📢 新增了 pip 指令功能，現在可以安裝、卸載及更新模組！</div>
+            <div class="news-item">🔧 更新了界面設計，讓使用者體驗更佳！</div>
+            <div class="news-item">✨ 近期計劃增加更多功能，敬請期待！</div>
+        </div>
+
         <div class="pip-instructions">
             <h3>Pip 指令提示：</h3>
             <ul>
@@ -181,70 +182,61 @@
         </div>
         {% endif %}
 
-        
-    <!-- 模組安裝進度顯示框 -->
-    <div id="modal" class="modal">
-        <div class="modal-content">
-            <h3>模組安裝進度</h3>
-            <p>正在安裝模組，請稍候...</p>
-            <button id="close-btn" class="btn-close">關閉</button>
-        </div>
-    </div>
-
-    <!-- 虛擬輸入框 -->
-    <div id="input-modal" class="input-modal">
-        <div class="input-modal-content">
-            <h3>請輸入資料</h3>
-            <div class="input-field">
-                <input type="text" id="user-input" placeholder="在這裡輸入...">
+        <!-- 模組安裝進度顯示框 -->
+        <div id="modal" class="modal">
+            <div class="modal-content">
+                <h3>模組安裝進度</h3>
+                <p>正在安裝模組，請稍候...</p>
+                <button id="close-btn" class="btn-close">關閉</button>
             </div>
-            <button id="submit-input" class="btn-primary">提交</button>
         </div>
+
+        <!-- 虛擬輸入框 -->
+        <div id="input-modal" class="input-modal">
+            <div class="input-modal-content">
+                <h3>請輸入資料</h3>
+                <div class="input-field">
+                    <input type="text" id="user-input" placeholder="在這裡輸入...">
+                </div>
+                <button id="submit-input" class="btn-primary">提交</button>
+            </div>
+        </div>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/prism.min.js"></script>
+        <script>
+            document.querySelector('#close-btn').addEventListener('click', function() {
+                document.querySelector('#modal').style.display = 'none';
+            });
+
+            document.querySelector('#submit-input').addEventListener('click', function() {
+                var userInput = document.querySelector('#user-input').value;
+                var hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = 'user_input';
+                hiddenInput.value = userInput;
+                document.querySelector('form').appendChild(hiddenInput);
+                document.querySelector('form').submit();
+            });
+
+            document.addEventListener('DOMContentLoaded', (event) => {
+                // 恢复输入框内容
+                const savedCode = localStorage.getItem('savedCode');
+                if (savedCode) {
+                    document.querySelector('textarea[name="code"]').value = savedCode;
+                }
+                
+                // 当输入框内容变化时，保存内容
+                document.querySelector('textarea[name="code"]').addEventListener('input', function() {
+                    localStorage.setItem('savedCode', this.value);
+                });
+                
+                // 清除保存的代码和输出结果（例如在表单提交后）
+                document.querySelector('form').addEventListener('submit', function() {
+                    localStorage.removeItem('savedCode');
+                    document.querySelector('.output').innerHTML = '';
+                });
+            });
+        </script>
     </div>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/prism.min.js"></script>
-    <script>
-        document.querySelector('#close-btn').addEventListener('click', function() {
-            document.querySelector('#modal').style.display = 'none';
-        });
-
-        document.querySelector('#submit-input').addEventListener('click', function() {
-            var userInput = document.querySelector('#user-input').value;
-            var hiddenInput = document.createElement('input');
-            hiddenInput.type = 'hidden';
-            hiddenInput.name = 'user_input';
-            hiddenInput.value = userInput;
-            document.querySelector('form').appendChild(hiddenInput);
-            document.querySelector('form').submit();
-        });
-
-        function showInstallModal() {
-            document.querySelector('#modal').style.display = 'flex';
-        }
-
-        function showInputModal() {
-            document.querySelector('#input-modal').style.display = 'flex';
-        }
-    </script>
-    <script>
-    document.addEventListener('DOMContentLoaded', (event) => {
-        // 恢复输入框内容
-        const savedCode = localStorage.getItem('savedCode');
-        if (savedCode) {
-            document.querySelector('textarea[name="code"]').value = savedCode;
-        }
-        
-        // 当输入框内容变化时，保存内容
-        document.querySelector('textarea[name="code"]').addEventListener('input', function() {
-            localStorage.setItem('savedCode', this.value);
-        });
-        
-        // 清除保存的代码（例如在表单提交后）
-        document.querySelector('form').addEventListener('submit', function() {
-            localStorage.removeItem('savedCode');
-        });
-    });
-</script>
-
 </body>
 </html>
