@@ -1,7 +1,8 @@
 import sys
 import io
 import subprocess
-import shutil  # 新增部分：匯入 shutil 來檢查磁碟使用情況
+import shutil
+import psutil  # 新增：匯入 psutil 來監控系統資源
 from flask import Flask, render_template, request
 from markupsafe import escape
 from flask_wtf import FlaskForm
@@ -79,13 +80,31 @@ def list_installed_modules():
     except subprocess.CalledProcessError as e:
         return f"模組列出失敗：{e}"
 
-def get_disk_usage():
-    """獲取當前磁碟區的使用情況"""
+def get_system_info():
+    """獲取系統資源使用情況"""
+    # 磁碟使用情況
     total, used, free = shutil.disk_usage("/")
-    return {
+    disk_usage = {
         "total": total // (2**30),  # Convert bytes to GB
         "used": used // (2**30),
         "free": free // (2**30)
+    }
+
+    # CPU 使用情況
+    cpu_usage = psutil.cpu_percent(interval=1)
+
+    # 記憶體使用情況
+    memory = psutil.virtual_memory()
+    memory_usage = {
+        "total": memory.total // (2**30),
+        "used": memory.used // (2**30),
+        "free": memory.available // (2**30)
+    }
+
+    return {
+        "disk_usage": disk_usage,
+        "cpu_usage": cpu_usage,
+        "memory_usage": memory_usage
     }
 
 @app.route('/', methods=['GET', 'POST'])
@@ -102,8 +121,8 @@ def index():
 
 @app.route('/admin')
 def admin():
-    disk_usage = get_disk_usage()
-    return render_template('admin.html', disk_usage=disk_usage)
+    system_info = get_system_info()
+    return render_template('admin.html', system_info=system_info)
 
 if __name__ == '__main__':
     app.run(debug=True, port=10000, host='0.0.0.0')
