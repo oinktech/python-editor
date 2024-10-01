@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" href="https://oinktech.github.io/images/favicon.ico">
     <title>Python 解釋器</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/themes/prism.min.css">
     <link href='https://unpkg.com/boxicons@2.0.9/css/boxicons.min.css' rel='stylesheet'>
@@ -15,19 +14,22 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
         }
         .container {
             width: 80%;
-            max-width: 800px;
+            max-width: 1000px;
             background-color: #ffffff;
             padding: 30px;
             border-radius: 15px;
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s;
+            position: relative;
+        }
+        .container:hover {
+            transform: translateY(-5px);
         }
         h1 {
             text-align: center;
-            margin-bottom: 20px;
         }
         form {
             margin-top: 20px;
@@ -46,6 +48,8 @@
             font-family: 'Courier New', Courier, monospace;
         }
         .btn-primary {
+            display: inline-flex;
+            align-items: center;
             background-color: #007bff;
             color: #fff;
             border: none;
@@ -53,21 +57,34 @@
             border-radius: 4px;
             cursor: pointer;
             transition: background-color 0.3s;
+            font-size: 16px;
         }
         .btn-primary:hover {
             background-color: #0056b3;
         }
-        .output {
+        .output, .history {
             margin-top: 30px;
             background-color: #ffffff;
             padding: 20px;
             border-radius: 8px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+        pre {
+            white-space: pre-wrap;
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 14px;
         }
         .error {
             color: #dc3545;
             font-weight: bold;
         }
-        .modal {
+        .history {
+            overflow-y: auto;
+            max-height: 300px;
+        }
+        .modal, .input-modal {
             display: none;
             position: fixed;
             top: 0;
@@ -78,30 +95,34 @@
             justify-content: center;
             align-items: center;
         }
-        .modal-content {
+        .modal-content, .input-modal-content {
             background-color: #fff;
             padding: 30px;
             border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             text-align: center;
         }
-        .progress {
+        .modal-content p {
+            margin: 20px 0;
+        }
+        .btn-close {
+            background-color: #dc3545;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .btn-close:hover {
+            background-color: #c82333;
+        }
+        .input-field {
+            margin-top: 20px;
+        }
+        .input-field input {
             width: 100%;
-            background-color: #f3f3f3;
-            border-radius: 5px;
-            margin-top: 10px;
-        }
-        .progress-bar {
-            width: 0;
-            height: 20px;
-            background-color: #007bff;
-            border-radius: 5px;
-            transition: width 0.4s;
-        }
-        #output-details {
-            white-space: pre-wrap;
-            margin-top: 10px;
-            background-color: #f8f9fa;
-            padding: 15px;
+            padding: 10px;
+            border: 1px solid #ddd;
             border-radius: 8px;
         }
     </style>
@@ -109,7 +130,7 @@
 <body>
     <div class="container">
         <h1><i class='bx bx-code-alt'></i> Python 解釋器</h1>
-        <form id="code-form" method="POST">
+        <form method="POST">
             {{ form.hidden_tag() }}
             <div class="form-group">
                 {{ form.code.label }}
@@ -131,18 +152,38 @@
             {% endif %}
         </div>
         {% endif %}
+
+        <div class="history">
+            <h3>執行歷史：</h3>
+            {% for code, output in history %}
+                <div>
+                    <strong>程式碼：</strong>
+                    <pre class="language-python">{{ code }}</pre>
+                    <strong>輸出結果：</strong>
+                    <pre>{{ output }}</pre>
+                </div>
+                <hr>
+            {% endfor %}
+        </div>
     </div>
 
     <!-- 模組安裝進度顯示框 -->
     <div id="modal" class="modal">
         <div class="modal-content">
             <h3>模組安裝進度</h3>
-            <p id="modal-message">正在安裝模組，請稍候...</p>
-            <div class="progress">
-                <div id="progress-bar" class="progress-bar"></div>
+            <p>正在安裝模組，請稍候...</p>
+            <button id="close-btn" class="btn-close">關閉</button>
+        </div>
+    </div>
+
+    <!-- 虛擬輸入框 -->
+    <div id="input-modal" class="input-modal">
+        <div class="input-modal-content">
+            <h3>請輸入資料</h3>
+            <div class="input-field">
+                <input type="text" id="user-input" placeholder="在這裡輸入...">
             </div>
-            <div id="output-details"></div>
-            <button id="close-btn" class="btn-primary">關閉</button>
+            <button id="submit-input" class="btn-primary">提交</button>
         </div>
     </div>
 
@@ -152,33 +193,18 @@
             document.querySelector('#modal').style.display = 'none';
         });
 
-        document.querySelector('#code-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            showInstallModal(); // 顯示模態框
-            const formData = new FormData(this);
-            fetch(this.action, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                updateProgress(data.progress);
-                document.querySelector('#modal-message').innerText = data.message;
-                document.querySelector('#output-details').innerText += data.details; // 显示下载详细信息
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
+        document.querySelector('#submit-input').addEventListener('click', function() {
+            var userInput = document.querySelector('#user-input').value;
+            document.querySelector('form').append('<input type="hidden" name="user_input" value="'+userInput+'">');
+            document.querySelector('form').submit();
         });
 
         function showInstallModal() {
             document.querySelector('#modal').style.display = 'flex';
-            document.querySelector('#output-details').innerText = ""; // 清空输出详情
         }
 
-        function updateProgress(progress) {
-            const progressBar = document.getElementById('progress-bar');
-            progressBar.style.width = progress + '%';
+        function showInputModal() {
+            document.querySelector('#input-modal').style.display = 'flex';
         }
     </script>
 </body>
