@@ -1,16 +1,24 @@
+from flask import Flask, render_template, request, jsonify, session
+import redis
+import time
 import sys
 import io
 import subprocess
 import shutil
-import psutil  # 新增：匯入 psutil 來監控系統資源
-from flask import Flask, render_template, request, jsonify
+import psutil
 from markupsafe import escape
 from flask_wtf import FlaskForm
 from wtforms import TextAreaField, SubmitField
 from wtforms.validators import DataRequired
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'your_secret_key_here'
+app.secret_key = "your_secret_key_here"
+
+# 配置 Redis 連接
+r = redis.StrictRedis(host='localhost', port=6379, db=0)
+
+# 設定 session 過期時間，假設以秒為單位
+SESSION_TIMEOUT = 300
 
 # 表單類別，用於輸入 Python 程式碼
 class CodeForm(FlaskForm):
@@ -112,6 +120,34 @@ def get_system_info():
         "memory_usage": memory_usage
     }
 
+# 追蹤訪問者數據
+def track_visitor():
+    # 如果 session 沒有 'user_id'，則生成一個唯一 ID
+    if 'user_id' not in session:
+        session['user_id'] = time.time()
+
+    user_id = session['user_id']
+    current_time = int(time.time())
+
+    # 在 Redis 中記錄這位訪問者
+    r.hset('visitors', user_id, current_time)
+
+    # 清理已過期的訪問者
+    for visitor, last_seen in r.hgetall('visitors').items():
+        if current_time - int(last_seen) > SESSION_TIMEOUT:
+            r.hdel('visitors', visitor)
+
+    # 增加歷史訪問人數
+    r.incr('total_visits')
+
+# 查看目前在線人數
+def get_current_visitors():
+    return r.hlen('visitors')
+
+# 查看歷史總訪問人數
+def get_total_visits():
+    return int(r.get('total_visits') or 0)
+
 # 主頁路由，處理 Python 程式碼執行
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -125,17 +161,21 @@ def index():
 
     return render_template('index.html', form=form, output=output, history=execution_history)
 
-# 管理頁面路由，顯示系統資源使用情況
+# 管理頁面路由，顯示系統資源使用情況和網站流量信息
 @app.route('/admin')
 def admin():
     system_info = get_system_info()
-    return render_template('admin.html', system_info=system_info)
+    current_visitors = get_current_visitors()
+    total_visits = get_total_visits()
+    return render_template('admin.html', system_info=system_info, current_visitors=current_visitors, total_visits=total_visits)
 
-# 提供 JSON 格式的系統資訊
+# 提供 JSON 格式的系統資訊和網站流量數據
 @app.route('/system_info')
 def system_info():
     info = get_system_info()
+    info['current_visitors'] = get_current_visitors()
+    info['total_visits'] = get_total_visits()
     return jsonify(info)
 
 if __name__ == '__main__':
-    app.run(debug=True,port=10000, host='0.0.0.0')
+    app.run(debug=True, port=10000, host='0.0.0.0')
