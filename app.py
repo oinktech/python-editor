@@ -53,10 +53,19 @@ def install_module(module):
 def index():
     form = CodeForm()
     output = None
+    page = request.args.get('page', 1, type=int)
+    items_per_page = 5
+    total_pages = (len(execution_history) + items_per_page - 1) // items_per_page
+    start = (page - 1) * items_per_page
+    end = start + items_per_page
+    paginated_history = execution_history[start:end]
+    
     if form.validate_on_submit():
         code = form.code.data
         output = execute_python(code)
-    return render_template('index.html', form=form, output=output, history=execution_history)
+        return render_template('index.html', form=form, output=output, history=execution_history, paginated_history=paginated_history, current_page=page, total_pages=total_pages, items_per_page=items_per_page)
+
+    return render_template('index.html', form=form, history=execution_history, paginated_history=paginated_history, current_page=page, total_pages=total_pages, items_per_page=items_per_page)
 
 @app.route('/install_module', methods=['POST'])
 def install_module_route():
