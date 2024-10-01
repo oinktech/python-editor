@@ -30,6 +30,16 @@ def execute_python(code, user_input=None):
             module = code.split(' ')[-1]
             install_module(module)
             output = f"模組 {module} 安裝成功！"
+        elif code.startswith('!pip uninstall'):
+            module = code.split(' ')[-1]
+            uninstall_module(module)
+            output = f"模組 {module} 卸載成功！"
+        elif code.startswith('!pip install --upgrade'):
+            module = code.split(' ')[-1]
+            update_module(module)
+            output = f"模組 {module} 更新成功！"
+        elif code.startswith('!pip list'):
+            output = list_installed_modules()
         else:
             exec(code)
             output = sys.stdout.getvalue()
@@ -50,26 +60,36 @@ def install_module(module):
     except subprocess.CalledProcessError as e:
         raise Exception(f"模組安裝失敗：{e}")
 
+def uninstall_module(module):
+    try:
+        subprocess.run([sys.executable, "-m", "pip", "uninstall", module, '-y'], check=True)
+    except subprocess.CalledProcessError as e:
+        raise Exception(f"模組卸載失敗：{e}")
+
+def update_module(module):
+    try:
+        subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", module], check=True)
+    except subprocess.CalledProcessError as e:
+        raise Exception(f"模組更新失敗：{e}")
+
+def list_installed_modules():
+    try:
+        result = subprocess.run([sys.executable, "-m", "pip", "list"], capture_output=True, text=True, check=True)
+        return result.stdout
+    except subprocess.CalledProcessError as e:
+        return f"模組列出失敗：{e}"
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
     form = CodeForm()
     output = None
-    user_input = request.form.get('user_input')
 
     if form.validate_on_submit():
-        code = form.code.data.strip()
+        code = form.code.data
+        user_input = request.form.get('user_input')
         output = execute_python(code, user_input)
 
     return render_template('index.html', form=form, output=output, history=execution_history)
-
-@app.route('/install_module', methods=['POST'])
-def install_module_route():
-    module = request.json.get('module')
-    try:
-        install_module(module)
-        return jsonify({"message": f"模組 {module} 安裝成功！"}), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, port=10000, host='0.0.0.0')
