@@ -97,6 +97,13 @@
             border-radius: 5px;
             transition: width 0.4s;
         }
+        #output-details {
+            white-space: pre-wrap;
+            margin-top: 10px;
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+        }
     </style>
 </head>
 <body>
@@ -134,6 +141,7 @@
             <div class="progress">
                 <div id="progress-bar" class="progress-bar"></div>
             </div>
+            <div id="output-details"></div>
             <button id="close-btn" class="btn-primary">關閉</button>
         </div>
     </div>
@@ -156,6 +164,7 @@
             .then(data => {
                 updateProgress(data.progress);
                 document.querySelector('#modal-message').innerText = data.message;
+                document.querySelector('#output-details').innerText += data.details; // 显示下载详细信息
             })
             .catch(error => {
                 console.error('Error:', error);
@@ -164,6 +173,7 @@
 
         function showInstallModal() {
             document.querySelector('#modal').style.display = 'flex';
+            document.querySelector('#output-details').innerText = ""; // 清空输出详情
         }
 
         function updateProgress(progress) {
