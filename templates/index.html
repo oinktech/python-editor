@@ -151,8 +151,6 @@
             <button type="submit" class="btn-primary"><i class='bx bx-play-circle'></i> 執行</button>
         </form>
 
-        
-
         {% if output is not none %}
         <div class="output">
             {% if output.startswith('錯誤') %}
@@ -182,7 +180,6 @@
                 <li><strong>列出所有已安裝模组：</strong> !pip list</li>
             </ul>
         </div>
- 
         
         <!-- 模組安裝進度顯示框 -->
         <div id="modal" class="modal">
@@ -221,23 +218,28 @@
             });
 
             document.addEventListener('DOMContentLoaded', (event) => {
-                // 恢复输入框内容
                 const savedCode = localStorage.getItem('savedCode');
                 if (savedCode) {
                     document.querySelector('textarea[name="code"]').value = savedCode;
                 }
-                
-                // 当输入框内容变化时，保存内容
+
                 document.querySelector('textarea[name="code"]').addEventListener('input', function() {
                     localStorage.setItem('savedCode', this.value);
                 });
-                
-                // 清除保存的代码和输出结果（例如在表单提交后）
+
                 document.querySelector('form').addEventListener('submit', function() {
                     localStorage.removeItem('savedCode');
                     document.querySelector('.output').innerHTML = '';
                 });
             });
+
+            // 模拟 Python 的 input() 函数
+            window.input = function(promptMessage) {
+                return new Promise((resolve) => {
+                    const userInput = prompt(promptMessage || "請輸入內容:");
+                    resolve(userInput);
+                });
+            };
         </script>
     </div>
 </body>
