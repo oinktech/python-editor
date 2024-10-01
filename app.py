@@ -21,14 +21,15 @@ def install_module(module):
         stderr=subprocess.PIPE,
         text=True
     )
-
+    details = []
     while True:
         output = process.stdout.readline()
         if output == '' and process.poll() is not None:
             break
         if output:
-            yield output.strip()
+            details.append(output.strip())
             time.sleep(1)  # 模擬進度延遲
+    return details
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -36,11 +37,15 @@ def index():
     output = None
 
     if form.validate_on_submit():
-        code = form.code.data
+        code = form.code.data.strip()
         if code.startswith('!pip install'):
             module = code.split(' ')[-1]
-            progress_message = '正在安裝模組...'
-            return jsonify({'progress': 100, 'message': progress_message})
+            details = install_module(module)
+            return jsonify({
+                'progress': 100,
+                'message': f'模組 {module} 安裝成功！',
+                'details': '\n'.join(details)
+            })
 
         # Execute the code
         old_stdout = sys.stdout
@@ -56,4 +61,4 @@ def index():
     return render_template('index.html', form=form, output=output)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=10000, host='0.0.0.0')
