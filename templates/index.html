@@ -151,6 +151,21 @@
             <button type="submit" class="btn-primary"><i class='bx bx-play-circle'></i> 執行</button>
         </form>
 
+        
+
+        {% if output is not none %}
+        <div class="output">
+            {% if output.startswith('錯誤') %}
+            <div class="error">
+                <h3>錯誤：</h3>
+                <pre>{{ output }}</pre>
+            </div>
+            {% else %}
+            <h3>輸出結果：</h3>
+            <pre class="language-python">{{ output }}</pre>
+            {% endif %}
+        </div>
+        {% endif %}
         <div class="news">
             <h3>最新消息：</h3>
             <div class="news-item">📢 新增了 pip 指令功能，現在可以安裝、卸載及更新模組！</div>
@@ -167,21 +182,8 @@
                 <li><strong>列出所有已安装模组：</strong> !pip list</li>
             </ul>
         </div>
-
-        {% if output is not none %}
-        <div class="output">
-            {% if output.startswith('錯誤') %}
-            <div class="error">
-                <h3>錯誤：</h3>
-                <pre>{{ output }}</pre>
-            </div>
-            {% else %}
-            <h3>輸出結果：</h3>
-            <pre class="language-python">{{ output }}</pre>
-            {% endif %}
-        </div>
-        {% endif %}
-
+ 
+        
         <!-- 模組安裝進度顯示框 -->
         <div id="modal" class="modal">
             <div class="modal-content">
