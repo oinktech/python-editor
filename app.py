@@ -26,12 +26,12 @@ def execute_python(code, user_input=None):
         if user_input:
             sys.stdin = io.StringIO(user_input)
 
+        # Handle specific pip commands
         if code.startswith('!pip install'):
             module = code.split(' ')[-1]
             install_module(module)
             output = f"模組 {module} 安裝成功！"
         elif code.startswith('!pip uninstall'):
-            
             output = f"⚠️由於安全性及相關考量，因此已移除該功能。⚠️"
         elif code.startswith('!pip install --upgrade'):
             module = code.split(' ')[-1]
@@ -39,7 +39,14 @@ def execute_python(code, user_input=None):
             output = f"模組 {module} 更新成功！"
         elif code.startswith('!pip list'):
             output = list_installed_modules()
+
+        # For other unknown "!" commands, execute them using subprocess
+        elif code.startswith('!'):
+            command = code[1:].strip()
+            output = run_subprocess(command)
+
         else:
+            # Execute the Python code
             exec(code)
             output = sys.stdout.getvalue()
 
@@ -53,17 +60,21 @@ def execute_python(code, user_input=None):
 
     return output
 
+def run_subprocess(command):
+    """使用 subprocess 執行任意命令"""
+    try:
+        result = subprocess.run(command, capture_output=True, text=True, shell=True)
+        if result.returncode != 0:
+            return f"錯誤：{result.stderr}"
+        return result.stdout
+    except Exception as e:
+        return f"執行命令失敗：{str(e)}"
+
 def install_module(module):
     try:
         subprocess.run([sys.executable, "-m", "pip", "install", module], check=True)
     except subprocess.CalledProcessError as e:
         raise Exception(f"模組安裝失敗：{e}")
-
-def uninstall_module(module):
-    try:
-        subprocess.run([sys.executable, "-m", "pip", "uninstall", module, '-y'], check=True)
-    except subprocess.CalledProcessError as e:
-        raise Exception(f"模組卸載失敗：{e}")
 
 def update_module(module):
     try:
