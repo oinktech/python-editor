@@ -1,10 +1,12 @@
 import sys
 import io
 import subprocess
+import time
 from flask import Flask, render_template, request, jsonify
 from flask_wtf import FlaskForm
 from wtforms import TextAreaField, SubmitField
 from wtforms.validators import DataRequired
+import threading
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key_here'
@@ -44,6 +46,9 @@ def execute_python(code, user_input=None):
 
 def install_module(module):
     try:
+        # 模擬下載進度
+        for i in range(5):
+            time.sleep(1)  # 模擬下載過程
         subprocess.run([sys.executable, "-m", "pip", "install", module], check=True)
         return f"模組 {module} 安裝成功！"
     except subprocess.CalledProcessError as e:
