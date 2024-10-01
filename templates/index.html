@@ -94,6 +94,24 @@
             overflow-y: auto;
             max-height: 300px;
         }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .pagination button {
+            margin: 0 5px;
+            padding: 5px 10px;
+            border: 1px solid #007bff;
+            border-radius: 5px;
+            background-color: #fff;
+            color: #007bff;
+            cursor: pointer;
+        }
+        .pagination button:hover {
+            background-color: #007bff;
+            color: white;
+        }
         .modal, .input-modal {
             display: none;
             position: fixed;
@@ -172,15 +190,22 @@
 
         <div class="history">
             <h3>執行歷史：</h3>
-            {% for code, output in history %}
-                <div>
-                    <strong>程式碼：</strong>
-                    <pre class="language-python">{{ code }}</pre>
-                    <strong>輸出結果：</strong>
-                    <pre>{{ output }}</pre>
-                </div>
-                <hr>
-            {% endfor %}
+            <input type="text" id="search-input" placeholder="搜尋執行歷史..." oninput="filterHistory()">
+            <div id="history-content">
+                {% for code, output in history %}
+                    <div class="history-item">
+                        <strong>程式碼：</strong>
+                        <pre class="language-python">{{ code }}</pre>
+                        <strong>輸出結果：</strong>
+                        <pre>{{ output }}</pre>
+                    </div>
+                    <hr>
+                {% endfor %}
+            </div>
+            <div class="pagination">
+                <button id="prev-page" onclick="changePage(-1)">上一頁</button>
+                <button id="next-page" onclick="changePage(1)">下一頁</button>
+            </div>
         </div>
     </div>
 
@@ -204,6 +229,41 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/prism.min.js"></script>
     <script>
+        let currentPage = 1;
+        const itemsPerPage = 5; // 每頁顯示的項目數
+
+        function filterHistory() {
+            const searchInput = document.getElementById('search-input').value.toLowerCase();
+            const historyItems = document.querySelectorAll('.history-item');
+            historyItems.forEach((item) => {
+                const code = item.querySelector('pre.language-python').innerText.toLowerCase();
+                const output = item.querySelector('pre').innerText.toLowerCase();
+                if (code.includes(searchInput) || output.includes(searchInput)) {
+                    item.style.display = '';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+
+        function changePage(direction) {
+            const historyItems = document.querySelectorAll('.history-item');
+            const totalItems = Array.from(historyItems).filter(item => item.style.display !== 'none').length;
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+            currentPage += direction;
+            if (currentPage < 1) currentPage = 1;
+            if (currentPage > totalPages) currentPage = totalPages;
+
+            let visibleCount = 0;
+            historyItems.forEach((item) => {
+                if (item.style.display !== 'none') {
+                    visibleCount++;
+                    item.style.display = visibleCount > (currentPage - 1) * itemsPerPage && visibleCount <= currentPage * itemsPerPage ? '' : 'none';
+                }
+            });
+        }
+
         document.querySelector('#close-btn').addEventListener('click', function() {
             document.querySelector('#modal').style.display = 'none';
         });
@@ -225,12 +285,6 @@
         function showInputModal() {
             document.querySelector('#input-modal').style.display = 'flex';
         }
-
-        // 禁用提交按鈕
-        document.querySelector('#code-form').addEventListener('submit', function() {
-            document.querySelector('.btn-primary').disabled = true;
-            document.querySelector('.btn-primary').innerText = '執行中...';
-        });
     </script>
 </body>
 </html>
