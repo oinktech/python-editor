@@ -5,7 +5,6 @@ from flask import Flask, render_template, request, jsonify
 from flask_wtf import FlaskForm
 from wtforms import TextAreaField, SubmitField
 from wtforms.validators import DataRequired
-import threading
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key_here'
@@ -16,12 +15,16 @@ class CodeForm(FlaskForm):
 
 execution_history = []
 
-def execute_python(code):
+def execute_python(code, user_input=None):
     global execution_history
     output = ""
     try:
         stdout = sys.stdout
+        stdin = sys.stdin
         sys.stdout = io.StringIO()
+
+        if user_input:
+            sys.stdin = io.StringIO(user_input)
 
         if code.startswith('!pip install'):
             module = code.split(' ')[-1]
@@ -30,12 +33,13 @@ def execute_python(code):
         else:
             exec(code)
             output = sys.stdout.getvalue()
-            
+
     except Exception as e:
         output = f"錯誤：{str(e)}"
     
     finally:
         sys.stdout = stdout
+        sys.stdin = stdin
         execution_history.append((code, output))
 
     return output
@@ -50,12 +54,22 @@ def install_module(module):
 def index():
     form = CodeForm()
     output = None
+    user_input = request.form.get('user_input')
 
     if form.validate_on_submit():
         code = form.code.data.strip()
-        output = execute_python(code)
+        output = execute_python(code, user_input)
 
     return render_template('index.html', form=form, output=output, history=execution_history)
+
+@app.route('/install_module', methods=['POST'])
+def install_module_route():
+    module = request.json.get('module')
+    try:
+        install_module(module)
+        return jsonify({"message": f"模組 {module} 安裝成功！"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, port=10000, host='0.0.0.0')
