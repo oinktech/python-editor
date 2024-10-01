@@ -3,42 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>管理介面 - 系統資訊</title>
-    <!-- 加入 Bootstrap CDN -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>系統管理</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        h1 {
+            text-align: center;
+            background-color: #4CAF50;
+            color: white;
+            padding: 20px 0;
+            margin: 0;
+        }
+
+        h2 {
+            color: #4CAF50;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        ul li {
+            background-color: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            font-size: 16px;
+        }
+
+        ul li::before {
+            content: '•';
+            color: #4CAF50;
+            font-weight: bold;
+            display: inline-block;
+            width: 1em;
+            margin-left: -1em;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                font-size: 14px;
+            }
+
+            ul li {
+                font-size: 14px;
+                padding: 10px;
+            }
+        }
+    </style>
 </head>
 <body>
-    <div class="container mt-5">
-        <h1 class="mb-4">系統資訊</h1>
-        <div class="row">
-            <div class="col-md-4">
-                <h3>磁碟使用情況</h3>
-                <ul class="list-group">
-                    <li class="list-group-item">總容量：{{ system_info.disk_usage.total }} GB</li>
-                    <li class="list-group-item">已使用：{{ system_info.disk_usage.used }} GB</li>
-                    <li class="list-group-item">剩餘空間：{{ system_info.disk_usage.free }} GB</li>
-                </ul>
-            </div>
+    <h1>系統資源和網站流量監控</h1>
 
-            <div class="col-md-4">
-                <h3>CPU 使用率</h3>
-                <ul class="list-group">
-                    <li class="list-group-item">CPU 使用率：{{ system_info.cpu_usage }}%</li>
-                </ul>
-            </div>
+    <div class="container">
+        <h2>系統資源使用情況：</h2>
+        <ul>
+            <li>CPU 使用率: {{ system_info.cpu_usage }}%</li>
+            <li>磁碟總量: {{ system_info.disk_usage.total }} GB</li>
+            <li>磁碟已用: {{ system_info.disk_usage.used }} GB</li>
+            <li>磁碟可用: {{ system_info.disk_usage.free }} GB</li>
+            <li>記憶體總量: {{ system_info.memory_usage.total }} GB</li>
+            <li>記憶體已用: {{ system_info.memory_usage.used }} GB</li>
+            <li>記憶體可用: {{ system_info.memory_usage.free }} GB</li>
+        </ul>
 
-            <div class="col-md-4">
-                <h3>記憶體使用情況</h3>
-                <ul class="list-group">
-                    <li class="list-group-item">總容量：{{ system_info.memory_usage.total }} GB</li>
-                    <li class="list-group-item">已使用：{{ system_info.memory_usage.used }} GB</li>
-                    <li class="list-group-item">剩餘空間：{{ system_info.memory_usage.free }} GB</li>
-                </ul>
-            </div>
-        </div>
+        <h2>網站流量監控：</h2>
+        <ul>
+            <li>當前在線人數: {{ current_visitors }}</li>
+            <li>歷史總訪問人數: {{ total_visits }}</li>
+        </ul>
     </div>
-
-    <!-- 加入 Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
