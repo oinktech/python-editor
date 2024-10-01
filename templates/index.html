@@ -7,7 +7,7 @@
     <link rel="icon" href="https://oinktech.github.io/images/favicon.ico">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/themes/prism.min.css">
     <link href='https://unpkg.com/boxicons@2.0.9/css/boxicons.min.css' rel='stylesheet'>
-    <style>
+        <style>
         body {
             font-family: Arial, sans-serif;
             background-color: #f0f0f0;
@@ -63,7 +63,7 @@
         .btn-primary:hover {
             background-color: #0056b3;
         }
-        .output, .history {
+        .output, .history, .news {
             margin-top: 30px;
             background-color: #ffffff;
             padding: 20px;
@@ -81,7 +81,7 @@
             color: #dc3545;
             font-weight: bold;
         }
-        .history {
+        .history, .news {
             overflow-y: auto;
             max-height: 300px;
         }
@@ -126,8 +126,16 @@
             border: 1px solid #ddd;
             border-radius: 8px;
         }
-        .pip-instructions {
-            margin-top: 20px;
+        .news h3 {
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .news-item {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        .news-item:last-child {
+            border-bottom: none;
         }
     </style>
 </head>
@@ -143,6 +151,12 @@
             <button type="submit" class="btn-primary"><i class='bx bx-play-circle'></i> 執行</button>
         </form>
 
+        <div class="news">
+    <h3>最新消息：</h3>
+    <div class="news-item">📢 新增了 pip 指令功能，現在可以安裝、卸載及更新模組！</div>
+    <div class="news-item">🔧 更新了界面設計，讓使用者體驗更佳！</div>
+    <div class="news-item">✨ 近期計劃增加更多功能，敬請期待！</div>
+</div>
         <div class="pip-instructions">
             <h3>Pip 指令提示：</h3>
             <ul>
@@ -167,20 +181,7 @@
         </div>
         {% endif %}
 
-        <div class="history">
-            <h3>執行歷史：</h3>
-            {% for code, output in history %}
-                <div>
-                    <strong>程式碼：</strong>
-                    <pre class="language-python">{{ code }}</pre>
-                    <strong>輸出結果：</strong>
-                    <pre>{{ output }}</pre>
-                </div>
-                <hr>
-            {% endfor %}
-        </div>
-    </div>
-
+        
     <!-- 模組安裝進度顯示框 -->
     <div id="modal" class="modal">
         <div class="modal-content">
@@ -225,5 +226,25 @@
             document.querySelector('#input-modal').style.display = 'flex';
         }
     </script>
+    <script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+        // 恢复输入框内容
+        const savedCode = localStorage.getItem('savedCode');
+        if (savedCode) {
+            document.querySelector('textarea[name="code"]').value = savedCode;
+        }
+        
+        // 当输入框内容变化时，保存内容
+        document.querySelector('textarea[name="code"]').addEventListener('input', function() {
+            localStorage.setItem('savedCode', this.value);
+        });
+        
+        // 清除保存的代码（例如在表单提交后）
+        document.querySelector('form').addEventListener('submit', function() {
+            localStorage.removeItem('savedCode');
+        });
+    });
+</script>
+
 </body>
 </html>
