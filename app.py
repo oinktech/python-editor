@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, session
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 import sqlite3
 import time
 import sys
@@ -10,6 +10,11 @@ from markupsafe import escape
 from flask_wtf import FlaskForm
 from wtforms import TextAreaField, SubmitField
 from wtforms.validators import DataRequired
+import os
+from dotenv import load_dotenv
+
+# 加載環境變數
+load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = "your_secret_key_here"
@@ -17,27 +22,28 @@ app.secret_key = "your_secret_key_here"
 # 設定 session 過期時間，假設以秒為單位
 SESSION_TIMEOUT = 300
 
-# 表單類別，用於輸入 Python 程式碼
+# 表單類，用於輸入 Python 程式碼
 class CodeForm(FlaskForm):
     code = TextAreaField('輸入您的 Python 程式碼：', validators=[DataRequired()])
     submit = SubmitField('執行')
 
-# 儲存執行歷史
+# 存儲執行歷史
 execution_history = []
 
-# 連接 SQLite 數據庫
+# 連接 SQLite 資料庫
 def get_db_connection():
     conn = sqlite3.connect('visitors.db')
     conn.row_factory = sqlite3.Row
     return conn
 
-# 初始化數據庫
+# 初始化資料庫
 def init_db():
     with get_db_connection() as conn:
         conn.execute('''
             CREATE TABLE IF NOT EXISTS visitors (
                 user_id TEXT PRIMARY KEY,
-                last_seen INTEGER
+                last_seen INTEGER,
+                ip_address TEXT
             )
         ''')
         conn.execute('''
@@ -66,13 +72,13 @@ def execute_python(code, user_input=None):
         if code.startswith('!pip install'):
             module = code.split(' ')[-1]
             install_module(module)
-            output = f"模組 {module} 安裝成功！"
+            output = f"模塊 {module} 安裝成功！"
         elif code.startswith('!pip uninstall'):
             output = "⚠️由於安全性及相關考量，因此已移除該功能。⚠️"
         elif code.startswith('!pip install --upgrade'):
             module = code.split(' ')[-1]
             update_module(module)
-            output = f"模組 {module} 更新成功！"
+            output = f"模塊 {module} 更新成功！"
         elif code.startswith('!pip list'):
             output = list_installed_modules()
         elif code.startswith('!'):
@@ -92,27 +98,27 @@ def execute_python(code, user_input=None):
 
     return output
 
-# 安裝 Python 模組
+# 安裝 Python 模塊
 def install_module(module):
     try:
         subprocess.run([sys.executable, "-m", "pip", "install", module], check=True, timeout=60)
     except subprocess.CalledProcessError as e:
-        raise Exception(f"模組安裝失敗：{e}")
+        raise Exception(f"模塊安裝失敗：{e}")
 
-# 更新 Python 模組
+# 更新 Python 模塊
 def update_module(module):
     try:
         subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", module], check=True, timeout=60)
     except subprocess.CalledProcessError as e:
-        raise Exception(f"模組更新失敗：{e}")
+        raise Exception(f"模塊更新失敗：{e}")
 
-# 列出已安裝的模組
+# 列出已安裝的模塊
 def list_installed_modules():
     try:
         result = subprocess.run([sys.executable, "-m", "pip", "list"], capture_output=True, text=True, check=True)
         return result.stdout
     except subprocess.CalledProcessError as e:
-        return f"模組列出失敗：{e}"
+        return f"模塊列出失敗：{e}"
 
 # 獲取系統資源使用情況
 def get_system_info():
@@ -141,8 +147,8 @@ def get_system_info():
         "memory_usage": memory_usage
     }
 
-# 追蹤訪問者數據
-def track_visitor():
+# 追蹤訪客資料
+def track_visitor(ip_address):
     with get_db_connection() as conn:
         # 如果 session 沒有 'user_id'，則生成一個唯一 ID
         if 'user_id' not in session:
@@ -151,16 +157,16 @@ def track_visitor():
         user_id = session['user_id']
         current_time = int(time.time())
 
-        # 在 SQLite 中記錄這位訪問者
-        conn.execute('INSERT OR REPLACE INTO visitors (user_id, last_seen) VALUES (?, ?)', (user_id, current_time))
+        # 在 SQLite 中記錄這位訪客
+        conn.execute('INSERT OR REPLACE INTO visitors (user_id, last_seen, ip_address) VALUES (?, ?, ?)', (user_id, current_time, ip_address))
 
-        # 清理已過期的訪問者
+        # 清理過期的訪客
         conn.execute('DELETE FROM visitors WHERE last_seen < ?', (current_time - SESSION_TIMEOUT,))
 
         # 增加歷史訪問人數
         conn.execute('UPDATE total_visits SET visit_count = visit_count + 1')
 
-# 查看目前在線人數
+# 查看當前在線人數
 def get_current_visitors():
     with get_db_connection() as conn:
         return conn.execute('SELECT COUNT(*) FROM visitors').fetchone()[0]
@@ -170,11 +176,26 @@ def get_total_visits():
     with get_db_connection() as conn:
         return conn.execute('SELECT visit_count FROM total_visits').fetchone()[0]
 
-# 主頁路由，處理 Python 程式碼執行
+# 登錄頁面路由
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+
+        if username == os.getenv('ADMIN_USERNAME') and password == os.getenv('ADMIN_PASSWORD'):
+            session['logged_in'] = True
+            return redirect(url_for('admin'))
+
+    return render_template('login.html')
+
+# 主頁面路由，處理 Python 程式碼執行
 @app.route('/', methods=['GET', 'POST'])
 def index():
     form = CodeForm()
     output = None
+    ip_address = request.remote_addr  # 獲取訪客的 IP 地址
+    track_visitor(ip_address)  # 追蹤訪客資料
 
     if form.validate_on_submit():
         code = form.code.data
@@ -186,12 +207,16 @@ def index():
 # 管理頁面路由，顯示系統資源使用情況和網站流量信息
 @app.route('/admin')
 def admin():
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))  # 如果未登錄，重定向到登錄頁面
+    
+    ip_address = request.remote_addr  # 獲取訪客的 IP 地址
     system_info = get_system_info()
     current_visitors = get_current_visitors()
     total_visits = get_total_visits()
-    return render_template('admin.html', system_info=system_info, current_visitors=current_visitors, total_visits=total_visits)
+    return render_template('admin.html', system_info=system_info, current_visitors=current_visitors, total_visits=total_visits, ip_address=ip_address)
 
-# 提供 JSON 格式的系統資訊和網站流量數據
+# 提供 JSON 格式的系統信息和網站流量數據
 @app.route('/system_info')
 def system_info():
     info = get_system_info()
@@ -200,5 +225,5 @@ def system_info():
     return jsonify(info)
 
 if __name__ == '__main__':
-    init_db()  # 初始化數據庫
+    init_db()  # 初始化資料庫
     app.run(debug=True, port=10000, host='0.0.0.0')
