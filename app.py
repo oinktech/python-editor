@@ -28,8 +28,7 @@ def execute_python(code, user_input=None):
 
         if code.startswith('!pip install'):
             module = code.split(' ')[-1]
-            install_module(module)
-            output = f"模組 {module} 安裝成功！"
+            output = install_module(module)
         else:
             exec(code)
             output = sys.stdout.getvalue()
@@ -47,8 +46,9 @@ def execute_python(code, user_input=None):
 def install_module(module):
     try:
         subprocess.run([sys.executable, "-m", "pip", "install", module], check=True)
+        return f"模組 {module} 安裝成功！"
     except subprocess.CalledProcessError as e:
-        raise Exception(f"模組安裝失敗：{e}")
+        return f"模組安裝失敗：{str(e)}"
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -66,8 +66,8 @@ def index():
 def install_module_route():
     module = request.json.get('module')
     try:
-        install_module(module)
-        return jsonify({"message": f"模組 {module} 安裝成功！"}), 200
+        result = install_module(module)
+        return jsonify({"message": result}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
