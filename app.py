@@ -1,65 +1,61 @@
 import sys
 import io
-import webbrowser
+import subprocess
 from flask import Flask, render_template, request, jsonify
 from flask_wtf import FlaskForm
 from wtforms import TextAreaField, SubmitField
 from wtforms.validators import DataRequired
+import threading
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key_here'
 
-# 表單類別
 class CodeForm(FlaskForm):
-    code = TextAreaField('輸入您的 Python 程式碼:', validators=[DataRequired()])
+    code = TextAreaField('輸入您的 Python 程式碼：', validators=[DataRequired()])
     submit = SubmitField('執行')
 
-# 執行程式碼的函數
+execution_history = []
+
 def execute_python(code):
+    global execution_history
+    output = ""
     try:
         stdout = sys.stdout
         sys.stdout = io.StringIO()
 
-        exec(code)
-        output = sys.stdout.getvalue()
-
+        if code.startswith('!pip install'):
+            module = code.split(' ')[-1]
+            install_module(module)
+            output = f"模組 {module} 安裝成功！"
+        else:
+            exec(code)
+            output = sys.stdout.getvalue()
+            
     except Exception as e:
-        output = f"錯誤: {str(e)}"
+        output = f"錯誤：{str(e)}"
     
     finally:
         sys.stdout = stdout
+        execution_history.append((code, output))
 
     return output
 
-# 主路由
+def install_module(module):
+    try:
+        subprocess.run([sys.executable, "-m", "pip", "install", module], check=True)
+    except subprocess.CalledProcessError as e:
+        raise Exception(f"模組安裝失敗：{e}")
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
     form = CodeForm()
     output = None
-    history = []
 
     if form.validate_on_submit():
         code = form.code.data.strip()
         output = execute_python(code)
 
-        # 模擬將歷史記錄保存到伺服器或瀏覽器端
-        history.append((code, output))
-
-    return render_template('index.html', form=form, output=output, history=history)
-
-# 新增檔案的 API
-@app.route('/save_file', methods=['POST'])
-def save_file():
-    data = request.get_json()
-    filename = data.get('filename')
-    content = data.get('content')
-    
-    # 將檔案寫入檔案系統 (模擬)
-    with open(f'stored_files/{filename}', 'w') as f:
-        f.write(content)
-
-    return jsonify({"message": "檔案已儲存成功!"})
+    return render_template('index.html', form=form, output=output, history=execution_history)
 
 if __name__ == '__main__':
-    webbrowser.open('http://localhost:22341/')
     app.run(debug=True, port=10000, host='0.0.0.0')
