@@ -12,6 +12,7 @@ from wtforms import TextAreaField, SubmitField
 from wtforms.validators import DataRequired
 import os
 from dotenv import load_dotenv
+import multiprocessing
 
 # 加載環境變數
 load_dotenv()
@@ -58,44 +59,54 @@ def init_db():
 # 執行 Python 程式碼的函數
 def execute_python(code, user_input=None):
     global execution_history
-    output = ""
-    try:
-        # 重定向標準輸出與輸入
-        stdout = sys.stdout
-        stdin = sys.stdin
-        sys.stdout = io.StringIO()
 
-        if user_input:
-            sys.stdin = io.StringIO(user_input)
+    def run_code(output_queue):
+        output = ""
+        try:
+            # 重定向標準輸出與輸入
+            stdout = sys.stdout
+            stdin = sys.stdin
+            sys.stdout = io.StringIO()
 
-        # 特殊命令處理
-        if code.startswith('!pip install'):
-            module = code.split(' ')[-1]
-            install_module(module)
-            output = f"模塊 {module} 安裝成功！"
-        elif code.startswith('!pip uninstall'):
-            output = "⚠️由於安全性及相關考量，因此已移除該功能。⚠️"
-        elif code.startswith('!pip install --upgrade'):
-            module = code.split(' ')[-1]
-            update_module(module)
-            output = f"模塊 {module} 更新成功！"
-        elif code.startswith('!pip list'):
-            output = list_installed_modules()
-        elif code.startswith('!'):
-            output = "⚠️ 此命令不允許執行。⚠️"
-        else:
-            exec(code)
-            output = sys.stdout.getvalue()
+            if user_input:
+                sys.stdin = io.StringIO(user_input)
 
-    except Exception as e:
-        output = f"錯誤：{str(e)}"
-    
-    finally:
-        sys.stdout = stdout
-        sys.stdin = stdin
-        output = escape(output)
-        execution_history.append((code, output))
+            # 特殊命令處理
+            if code.startswith('!pip install'):
+                module = code.split(' ')[-1]
+                install_module(module)
+                output = f"模塊 {module} 安裝成功！"
+            elif code.startswith('!pip uninstall'):
+                output = "⚠️由於安全性及相關考量，因此已移除該功能。⚠️"
+            elif code.startswith('!pip install --upgrade'):
+                module = code.split(' ')[-1]
+                update_module(module)
+                output = f"模塊 {module} 更新成功！"
+            elif code.startswith('!pip list'):
+                output = list_installed_modules()
+            elif code.startswith('!'):
+                output = "⚠️ 此命令不允許執行。⚠️"
+            else:
+                exec(code)
+                output = sys.stdout.getvalue()
 
+        except Exception as e:
+            output = f"錯誤：{str(e)}"
+        
+        finally:
+            sys.stdout = stdout
+            sys.stdin = stdin
+            output = escape(output)
+            execution_history.append((code, output))
+            output_queue.put(output)
+
+    output_queue = multiprocessing.Queue()
+    process = multiprocessing.Process(target=run_code, args=(output_queue,))
+    process.start()
+    process.join()  # 等待進程完成
+
+    # 从队列中获取输出
+    output = output_queue.get()
     return output
 
 # 安裝 Python 模塊
@@ -199,10 +210,11 @@ def index():
 
     if form.validate_on_submit():
         code = form.code.data
-        user_input = request.form.get('user_input')
-        output = execute_python(code, user_input)
+        # 在此處將 'input' 轉換為 JavaScript 的處理
+        output = execute_python(code)
 
     return render_template('index.html', form=form, output=output, history=execution_history)
+
 @app.errorhandler(404)
 def page_not_found(e):
     return render_template('404.html'), 404
@@ -234,6 +246,27 @@ def system_info():
     info['total_visits'] = get_total_visits()
     return jsonify(info)
 
+# 清理執行歷史記錄
+@app.route('/clear_history')
+def clear_history():
+    global execution_history
+    execution_history = []
+    return redirect(url_for('index'))
+
+# 獲取所有訪客的 IP 地址
+@app.route('/get_visitors')
+def get_visitors():
+    with get_db_connection() as conn:
+        visitors = conn.execute('SELECT ip_address FROM visitors').fetchall()
+    return jsonify([visitor['ip_address'] for visitor in visitors])
+
+# 退出登錄
+@app.route('/logout')
+def logout():
+    session.pop('logged_in', None)
+    return redirect(url_for('login'))
+
+# 啟動應用
 if __name__ == '__main__':
-    init_db()  # 初始化資料庫
-    app.run(debug=True, port=10000, host='0.0.0.0')
+    init_db()
+    app.run(host='0.0.0.0', port=10000, debug=True)
