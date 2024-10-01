@@ -241,6 +241,170 @@
                 });
             };
         </script>
+            <script>
+        // 創建並添加CSS樣式
+        const style = document.createElement('style');
+        style.innerHTML = `
+            
+            .modal {
+                display: none;
+                position: fixed;
+                z-index: 1;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.5);
+                opacity: 0;
+                transition: opacity 0.5s ease-in-out;
+            }
+            .modal.active {
+                display: block;
+                opacity: 1;
+            }
+            .modal-content {
+                background-color: #fff;
+                margin: 15% auto;
+                padding: 20px;
+                border-radius: 8px;
+                border: 1px solid #ccc;
+                width: 80%;
+                max-width: 600px;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+                animation: slideIn 0.5s ease;
+            }
+            @keyframes slideIn {
+                from { transform: translateY(-50px); opacity: 0; }
+                to { transform: translateY(0); opacity: 1; }
+            }
+            .modal-header {
+                font-size: 1.75em;
+                margin-bottom: 10px;
+                color: #333;
+            }
+            .modal-body {
+                font-size: 1em;
+                color: #666;
+                line-height: 1.5em;
+            }
+            .modal-footer {
+                margin-top: 20px;
+                text-align: right;
+            }
+            .modal-footer button {
+                background-color: #00bfff;
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 5px;
+                cursor: pointer;
+                transition: background-color 0.3s;
+            }
+            .modal-footer button:hover {
+                background-color: #009acd;
+            }
+            .hidden {
+                display: none;
+            }
+        `;
+        document.head.appendChild(style);
+
+        // 創建模態框容器
+        const termsModal = document.createElement('div');
+        termsModal.id = "termsModal";
+        termsModal.className = "modal";
+
+        const privacyModal = document.createElement('div');
+        privacyModal.id = "privacyModal";
+        privacyModal.className = "modal hidden";
+
+        // 同意條款內容
+        const termsContent = `
+            <div class="modal-content">
+                <div class="modal-header">同意條款</div>
+                <div class="modal-body">
+                    <p>歡迎您訪問本網站！我們致力於為每一位用戶提供一個穩定、安全且順暢的使用環境，為此請您在使用本網站前仔細閱讀並同意以下條款。您的訪問和使用即表示您已了解並接受這些條款。</p>
+                    <p><strong>1. 網站正常運行的維護</strong><br>
+                    我們已投入大量資源來確保本網站能夠穩定運行，以為所有訪客提供連續的服務體驗。網站會定期進行維護與更新，確保其安全性和效能。用戶應尊重這些努力，並避免任何影響網站正常運行的行為。如果您在使用過程中遇到任何技術問題或異常情況，請即時通過我們的官方聯繫渠道反映問題，我們將努力為您提供解決方案。</p>
+                    <p><strong>2. 禁止故意破壞行為及不正當使用</strong><br>
+                    我們明確禁止任何故意破壞本網站正常運作的行為，包括但不限於：對網站進行分散式阻斷服務攻擊（DDoS），或者試圖利用其他方式導致網站服務中斷。</p>
+                    <p><strong>3. 法律責任與懲罰</strong><br>
+                    如果任何用戶或組織故意進行破壞性行為，將可能面臨相應的法律懲罰。我們保留追究破壞者法律責任的權利，並將主動與相關執法機構合作。</p>
+                    <p><strong>4. 接受條款與使用責任</strong><br>
+                    您在訪問和使用本網站前，應充分理解並同意這些條款。如果您不同意任何部分，請立即停止使用本網站。</p>
+                </div>
+                <div class="modal-footer">
+                    <button id="privacyPolicyBtn">查看隱私政策</button>
+                    <button id="agreeTermsBtn">同意</button>
+                </div>
+            </div>
+        `;
+        termsModal.innerHTML = termsContent;
+        document.body.appendChild(termsModal);
+
+        // 隱私政策內容
+        const privacyContent = `
+            <div class="modal-content">
+                <div class="modal-header">隱私政策</div>
+                <div class="modal-body">
+                    <p>我們高度重視您的隱私，並致力於保護您在使用本網站過程中所提供的個人資料。此隱私政策將說明我們如何收集、使用及保護您的資訊。</p>
+                    <p><strong>1. 收集的資料</strong><br>
+                    當您訪問本網站時，我們將自動收集以下資訊，以確保網站的安全與正常運行：您的IP位址、訪問的日期與時間、設備類型等。</p>
+                    <p><strong>2. 收集資料的用途</strong><br>
+                    我們收集的資訊將用於網站安全維護、追查不法行為和改善服務品質。</p>
+                    <p><strong>3. 資料保護</strong><br>
+                    我們將根據最高標準來保護您的個人資料，防止未經授權的訪問、篡改或洩露。</p>
+                    <p><strong>4. 政策更新</strong><br>
+                    我們保留隨時修改和更新本隱私政策的權利。</p>
+                </div>
+                <div class="modal-footer">
+                    <button id="backToTermsBtn">返回同意條款</button>
+                    <button id="agreePrivacyBtn">同意</button>
+                </div>
+            </div>
+        `;
+        privacyModal.innerHTML = privacyContent;
+        document.body.appendChild(privacyModal);
+
+        // 模態框交互與邏輯
+        window.onload = function() {
+            const privacyPolicyBtn = document.getElementById("privacyPolicyBtn");
+            const backToTermsBtn = document.getElementById("backToTermsBtn");
+            const agreeTermsBtn = document.getElementById("agreeTermsBtn");
+            const agreePrivacyBtn = document.getElementById("agreePrivacyBtn");
+
+            const termsModal = document.getElementById("termsModal");
+            const privacyModal = document.getElementById("privacyModal");
+
+            // 顯示同意條款模態框
+            termsModal.classList.add("active");
+
+            // 切換到隱私政策模態框
+            privacyPolicyBtn.onclick = function() {
+                termsModal.classList.remove("active");
+                privacyModal.classList.add("active");
+            };
+
+            // 返回同意條款模態框
+            backToTermsBtn.onclick = function() {
+                privacyModal.classList.remove("active");
+                termsModal.classList.add("active");
+            };
+
+            // 防止用戶跳過同意條款
+            agreeTermsBtn.onclick = function() {
+                alert("請先查看隱私政策並同意");
+            };
+
+            // 用戶同意條款與隱私政策後
+            agreePrivacyBtn.onclick = function() {
+                termsModal.style.display = "none";
+                privacyModal.style.display = "none";
+                alert("已同意條款與隱私政策，您可以進入網站");
+                document.body.style.overflow = "auto"; // 恢復頁面滾動
+            };
+        };
+    </script>
     </div>
 </body>
 </html>
