@@ -65,7 +65,6 @@ def execute_python(code, user_input=None):
         try:
             # 重定向標準輸出與輸入
             stdout = sys.stdout
-            stdin = sys.stdin
             sys.stdout = io.StringIO()
 
             if user_input:
@@ -95,7 +94,6 @@ def execute_python(code, user_input=None):
         
         finally:
             sys.stdout = stdout
-            sys.stdin = stdin
             output = escape(output)
             execution_history.append((code, output))
             output_queue.put(output)
@@ -103,9 +101,15 @@ def execute_python(code, user_input=None):
     output_queue = multiprocessing.Queue()
     process = multiprocessing.Process(target=run_code, args=(output_queue,))
     process.start()
-    process.join()  # 等待進程完成
 
-    # 从队列中获取输出
+    # 实时获取输出
+    while process.is_alive():
+        if not output_queue.empty():
+            output = output_queue.get()
+            return output  # 返回实时输出
+    process.join()
+
+    # 从队列中获取最终输出
     output = output_queue.get()
     return output
 
@@ -215,6 +219,13 @@ def index():
 
     return render_template('index.html', form=form, output=output, history=execution_history)
 
+# 處理 AJAX 請求以執行 Python 程式碼
+@app.route('/execute', methods=['POST'])
+def execute_code():
+    code = request.form['code']
+    output = execute_python(code)
+    return jsonify({'output': output})
+
 @app.errorhandler(404)
 def page_not_found(e):
     return render_template('404.html'), 404
@@ -246,27 +257,6 @@ def system_info():
     info['total_visits'] = get_total_visits()
     return jsonify(info)
 
-# 清理執行歷史記錄
-@app.route('/clear_history')
-def clear_history():
-    global execution_history
-    execution_history = []
-    return redirect(url_for('index'))
-
-# 獲取所有訪客的 IP 地址
-@app.route('/get_visitors')
-def get_visitors():
-    with get_db_connection() as conn:
-        visitors = conn.execute('SELECT ip_address FROM visitors').fetchall()
-    return jsonify([visitor['ip_address'] for visitor in visitors])
-
-# 退出登錄
-@app.route('/logout')
-def logout():
-    session.pop('logged_in', None)
-    return redirect(url_for('login'))
-
-# 啟動應用
 if __name__ == '__main__':
-    init_db()
-    app.run(host='0.0.0.0', port=10000, debug=True)
+    init_db()  # 初始化資料庫
+    app.run(port=10000, host='0.0.0.0', debug=True)
