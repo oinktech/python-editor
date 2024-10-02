@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Python Editor</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link rel="icon" href="https://oinktech.github.io/images/favicon.ico">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/themes/prism.min.css">
     <link href='https://unpkg.com/boxicons@2.0.9/css/boxicons.min.css' rel='stylesheet'>
@@ -442,6 +443,22 @@
         };
     };
 </script>
+        <script>
+        $(document).ready(function() {
+            $('#code-form').on('submit', function(event) {
+                event.preventDefault(); // 阻止表单的默认提交
+                
+                // 获取代码输入
+                const code = $('#code-form textarea[name="code"]').val();
+                
+                // 使用 AJAX 提交代码
+                $.post('/execute', { code: code }, function(data) {
+                    // 更新输出结果
+                    $('#output').text(data.output);
+                });
+            });
+        });
+    </script>
 
     </div>
 </body>
