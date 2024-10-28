@@ -13,6 +13,7 @@ from wtforms.validators import DataRequired
 import os
 from dotenv import load_dotenv
 import multiprocessing
+import concurrent.futures
 
 # 加載環境變數
 load_dotenv()
@@ -71,8 +72,14 @@ def execute_python(code, user_input=None):
             new_code_lines.append(line)  # 獲取正常程式碼行
 
     # 安裝所有需要的模塊
-    for module in pip_install_lines:
-        install_module(module)  # 安裝模塊
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        future_to_module = {executor.submit(install_module, module): module for module in pip_install_lines}
+        for future in concurrent.futures.as_completed(future_to_module):
+            module = future_to_module[future]
+            try:
+                future.result()
+            except Exception as e:
+                raise Exception(f"模塊 {module} 安裝失敗：{e}")
 
     # 合併剩餘的程式碼行
     code_to_execute = '\n'.join(new_code_lines)
@@ -245,11 +252,9 @@ def page_not_found(e):
 # 处理其他错误
 @app.errorhandler(Exception)
 def handle_error(e):
-    # 获取错误信息
-    error_message = str(e)
-    return render_template('error.html', error_message=error_message), 500
+    return render_template('error.html', message=str(e)), 500
 
-# 管理頁面路由，顯示系統資源使用情況和網站流量信息
+# 後台管理頁面路由
 @app.route('/admin')
 def admin():
     if not session.get('logged_in'):
