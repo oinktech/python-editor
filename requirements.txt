@@ -6,3 +6,5 @@ redis
 psutil
 python-dotenv
 piggaga_models
+yfinance
+matplotlib
