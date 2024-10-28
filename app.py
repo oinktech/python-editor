@@ -95,15 +95,15 @@ def execute_python(code, user_input=None):
                 sys.stdin = io.StringIO(user_input)
 
             # 特殊命令處理
-            if code.startswith('!pip uninstall'):
+            if code_to_execute.startswith('!pip uninstall'):
                 output = "⚠️由於安全性及相關考量，因此已移除該功能。⚠️"
-            elif code.startswith('!pip install --upgrade'):
+            elif code_to_execute.startswith('!pip install --upgrade'):
                 module = code.split(' ')[-1]
                 update_module(module)
                 output = f"模塊 {module} 更新成功！"
-            elif code.startswith('!pip list'):
+            elif code_to_execute.startswith('!pip list'):
                 output = list_installed_modules()
-            elif code.startswith('!'):
+            elif code_to_execute.startswith('!'):
                 output = "⚠️ 此命令不允許執行。⚠️"
             else:
                 exec(code_to_execute)  # 執行過濾後的程式碼
@@ -122,14 +122,14 @@ def execute_python(code, user_input=None):
     process = multiprocessing.Process(target=run_code, args=(output_queue,))
     process.start()
 
-    # 实时获取输出
+    # 實時獲取輸出
     while process.is_alive():
         if not output_queue.empty():
             output = output_queue.get()
-            return output  # 返回实时输出
+            return output  # 返回實時輸出
     process.join()
 
-    # 从队列中获取最终输出
+    # 從隊列中獲取最終輸出
     output = output_queue.get()
     return output
 
@@ -249,9 +249,9 @@ def execute_code():
 def page_not_found(e):
     return render_template('404.html'), 404
 
-# 处理其他错误
+# 处理其他未捕获的异常
 @app.errorhandler(Exception)
-def handle_error(e):
+def handle_exception(e):
     return render_template('error.html', message=str(e)), 500
 
 # 後台管理頁面路由
