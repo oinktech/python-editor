@@ -12,16 +12,13 @@ from wtforms import TextAreaField, SubmitField
 from wtforms.validators import DataRequired
 import os
 from dotenv import load_dotenv
-import multiprocessing
+from concurrent.futures import ProcessPoolExecutor
 
 # 加載環境變數
 load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = "your_secret_key_here"
-
-# 設定 session 過期時間，假設以秒為單位
-SESSION_TIMEOUT = 300
 
 # 表單類，用於輸入 Python 程式碼
 class CodeForm(FlaskForm):
@@ -56,74 +53,57 @@ def init_db():
         if conn.execute('SELECT COUNT(*) FROM total_visits').fetchone()[0] == 0:
             conn.execute('INSERT INTO total_visits (visit_count) VALUES (0)')
 
-# 執行 Python 程式碼的函數
+# 执行 Python 程式碼的函数
 def execute_python(code, user_input=None):
-    global execution_history
+    output = ""
+    try:
+        # 重定向標準輸出與輸入
+        stdout = sys.stdout
+        sys.stdout = io.StringIO()
 
-    def run_code(output_queue):
-        output = ""
-        try:
-            # 重定向標準輸出與輸入
-            stdout = sys.stdout
-            sys.stdout = io.StringIO()
+        if user_input:
+            sys.stdin = io.StringIO(user_input)
 
-            if user_input:
-                sys.stdin = io.StringIO(user_input)
+        # 特殊命令處理
+        if code.startswith('!pip install'):
+            module = code.split(' ')[-1]
+            install_module(module)
+            output = f"模塊 {module} 安裝成功！"
+        elif code.startswith('!pip uninstall'):
+            output = "⚠️由於安全性及相關考量，因此已移除該功能。⚠️"
+        elif code.startswith('!pip install --upgrade'):
+            module = code.split(' ')[-1]
+            update_module(module)
+            output = f"模塊 {module} 更新成功！"
+        elif code.startswith('!pip list'):
+            output = list_installed_modules()
+        elif code.startswith('!'):
+            output = "⚠️ 此命令不允許執行。⚠️"
+        else:
+            exec(code)
+            output = sys.stdout.getvalue()
 
-            # 特殊命令處理
-            if code.startswith('!pip install'):
-                module = code.split(' ')[-1]
-                install_module(module)
-                output = f"模塊 {module} 安裝成功！"
-            elif code.startswith('!pip uninstall'):
-                output = "⚠️由於安全性及相關考量，因此已移除該功能。⚠️"
-            elif code.startswith('!pip install --upgrade'):
-                module = code.split(' ')[-1]
-                update_module(module)
-                output = f"模塊 {module} 更新成功！"
-            elif code.startswith('!pip list'):
-                output = list_installed_modules()
-            elif code.startswith('!'):
-                output = "⚠️ 此命令不允許執行。⚠️"
-            else:
-                exec(code)
-                output = sys.stdout.getvalue()
-
-        except Exception as e:
-            output = f"錯誤：{str(e)}"
-        
-        finally:
-            sys.stdout = stdout
-            output = escape(output)
-            execution_history.append((code, output))
-            output_queue.put(output)
-
-    output_queue = multiprocessing.Queue()
-    process = multiprocessing.Process(target=run_code, args=(output_queue,))
-    process.start()
-
-    # 实时获取输出
-    while process.is_alive():
-        if not output_queue.empty():
-            output = output_queue.get()
-            return output  # 返回实时输出
-    process.join()
-
-    # 从队列中获取最终输出
-    output = output_queue.get()
+    except Exception as e:
+        output = f"錯誤：{str(e)}"
+    
+    finally:
+        sys.stdout = stdout
+        output = escape(output)
+        execution_history.append((code, output))
+    
     return output
 
 # 安裝 Python 模塊
 def install_module(module):
     try:
-        subprocess.run([sys.executable, "-m", "pip", "install", module], check=True, timeout=60)
+        subprocess.run([sys.executable, "-m", "pip", "install", module], check=True)
     except subprocess.CalledProcessError as e:
         raise Exception(f"模塊安裝失敗：{e}")
 
 # 更新 Python 模塊
 def update_module(module):
     try:
-        subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", module], check=True, timeout=60)
+        subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", module], check=True)
     except subprocess.CalledProcessError as e:
         raise Exception(f"模塊更新失敗：{e}")
 
@@ -137,18 +117,14 @@ def list_installed_modules():
 
 # 獲取系統資源使用情況
 def get_system_info():
-    # 磁碟使用情況
     total, used, free = shutil.disk_usage("/")
     disk_usage = {
-        "total": total // (2**30),  # 將位元組轉換為 GB
+        "total": total // (2**30),
         "used": used // (2**30),
         "free": free // (2**30)
     }
 
-    # CPU 使用情況
     cpu_usage = psutil.cpu_percent(interval=1)
-
-    # 記憶體使用情況
     memory = psutil.virtual_memory()
     memory_usage = {
         "total": memory.total // (2**30),
@@ -165,20 +141,14 @@ def get_system_info():
 # 追蹤訪客資料
 def track_visitor(ip_address):
     with get_db_connection() as conn:
-        # 如果 session 沒有 'user_id'，則生成一個唯一 ID
         if 'user_id' not in session:
             session['user_id'] = str(time.time())
 
         user_id = session['user_id']
         current_time = int(time.time())
 
-        # 在 SQLite 中記錄這位訪客
         conn.execute('INSERT OR REPLACE INTO visitors (user_id, last_seen, ip_address) VALUES (?, ?, ?)', (user_id, current_time, ip_address))
-
-        # 清理過期的訪客
-        conn.execute('DELETE FROM visitors WHERE last_seen < ?', (current_time - SESSION_TIMEOUT,))
-
-        # 增加歷史訪問人數
+        conn.execute('DELETE FROM visitors WHERE last_seen < ?', (current_time - 300,))
         conn.execute('UPDATE total_visits SET visit_count = visit_count + 1')
 
 # 查看當前在線人數
@@ -209,13 +179,13 @@ def login():
 def index():
     form = CodeForm()
     output = None
-    ip_address = request.remote_addr  # 獲取訪客的 IP 地址
-    track_visitor(ip_address)  # 追蹤訪客資料
+    ip_address = request.remote_addr
+    track_visitor(ip_address)
 
     if form.validate_on_submit():
         code = form.code.data
-        # 在此處將 'input' 轉換為 JavaScript 的處理
-        output = execute_python(code)
+        with ProcessPoolExecutor() as executor:
+            output = executor.submit(execute_python, code).result()
 
     return render_template('index.html', form=form, output=output, history=execution_history)
 
@@ -223,27 +193,26 @@ def index():
 @app.route('/execute', methods=['POST'])
 def execute_code():
     code = request.form['code']
-    output = execute_python(code)
+    with ProcessPoolExecutor() as executor:
+        output = executor.submit(execute_python, code).result()
     return jsonify({'output': output})
 
 @app.errorhandler(404)
 def page_not_found(e):
     return render_template('404.html'), 404
 
-# 处理其他错误
 @app.errorhandler(Exception)
 def handle_error(e):
-    # 获取错误信息
     error_message = str(e)
     return render_template('error.html', error_message=error_message), 500
 
-# 管理頁面路由，顯示系統資源使用情況和網站流量信息
+# 管理頁面路由
 @app.route('/admin')
 def admin():
     if not session.get('logged_in'):
-        return redirect(url_for('login'))  # 如果未登錄，重定向到登錄頁面
+        return redirect(url_for('login'))
     
-    ip_address = request.remote_addr  # 獲取訪客的 IP 地址
+    ip_address = request.remote_addr
     system_info = get_system_info()
     current_visitors = get_current_visitors()
     total_visits = get_total_visits()
