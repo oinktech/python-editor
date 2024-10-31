@@ -16,7 +16,7 @@ Python Editor is a simple web-based Python code editor. It allows users to write
 - Simple, minimal interface
 
 ### Live Demo
-You can try out Python Editor directly without any installation: [Python Editor Live Demo](https://python-editor-629t.onrender.com/)
+You can try out Python Editor directly without any installation: [Python Editor Live Demo](https://python-editors.onrender.com/)
 
 ### Installation
 1. Clone the repository:
@@ -56,7 +56,7 @@ Python Editor 是一個簡單的基於網頁的 Python 代碼編輯器。它允�
 - 簡單、極簡的界面設計
 
 ### 線上體驗
-您可以直接訪問並體驗 Python Editor：[Python Editor 線上體驗](https://python-editor-629t.onrender.com/)
+您可以直接訪問並體驗 Python Editor：[Python Editor 線上體驗](https://python-editors.onrender.com/)
 
 ### 安裝步驟
 1. 克隆此倉庫：
@@ -96,7 +96,7 @@ Python Editorは、ブラウザで直接Pythonコードを作成、実行、お�
 - シンプルでミニマルなインターフェース
 
 ### ライブデモ
-インストールなしでPython Editorをお試しください：[Python Editor ライブデモ](https://python-editor-629t.onrender.com/)
+インストールなしでPython Editorをお試しください：[Python Editor ライブデモ](https://python-editors.onrender.com/)
 
 ### インストール手順
 1. リポジトリをクローンします：
