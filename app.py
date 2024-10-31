@@ -120,8 +120,7 @@ def execute_python(code, user_input=None):
                 output = "⚠️由於安全性及相關考量，因此已移除該功能。⚠️"
             elif code_to_execute.startswith('!pip install --upgrade'):
                 module = code.split(' ')[-1]
-                update_module(module)
-                output = f"模塊 {module} 更新成功！"
+                output = update_module(module)  # 更新模塊並返回信息
             elif code_to_execute.startswith('!pip list'):
                 output = list_installed_modules()
             elif code_to_execute.startswith('!'):
@@ -158,6 +157,7 @@ def execute_python(code, user_input=None):
 def install_module(module):
     try:
         subprocess.run([sys.executable, "-m", "pip", "install", module], check=True, timeout=60)
+        return f"模塊 {module} 安裝成功！"
     except subprocess.CalledProcessError as e:
         raise Exception(f"模塊安裝失敗：{e}")
 
@@ -165,6 +165,7 @@ def install_module(module):
 def update_module(module):
     try:
         subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", module], check=True, timeout=60)
+        return f"模塊 {module} 更新成功！"
     except subprocess.CalledProcessError as e:
         raise Exception(f"模塊更新失敗：{e}")
 
@@ -212,7 +213,6 @@ def get_system_info():
         "total_visits": total_visits
     }
 
-
 # 登錄頁面路由
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -254,4 +254,4 @@ def admin():
 
 if __name__ == "__main__":
     init_db()
-    app.run(host="0.0.0.0", port=10000)
+    app.run(host="0.0.0.0", port=10000,debug=True)
