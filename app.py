@@ -1,5 +1,4 @@
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
-import sqlite3
 import time
 import sys
 import io
@@ -12,9 +11,11 @@ from wtforms import TextAreaField, SubmitField
 from wtforms.validators import DataRequired
 import os
 from dotenv import load_dotenv
+from pymongo import MongoClient
 import multiprocessing
 import concurrent.futures
 from flask_cors import CORS
+
 # 加載環境變數
 load_dotenv()
 
@@ -33,59 +34,49 @@ class CodeForm(FlaskForm):
 # 存儲執行歷史
 execution_history = []
 
-# 連接 SQLite 資料庫
+# 初始化 MongoDB 連線
 def get_db_connection():
-    conn = sqlite3.connect('visitors.db')
-    conn.row_factory = sqlite3.Row
-    return conn
+    client = MongoClient(os.getenv("MONGODB_URI"))
+    db = client.get_database()  # 獲取資料庫，名稱取自 URI
+    return db
 
 # 初始化資料庫
 def init_db():
-    with get_db_connection() as conn:
-        conn.execute('''
-            CREATE TABLE IF NOT EXISTS visitors (
-                user_id TEXT PRIMARY KEY,
-                last_seen INTEGER,
-                ip_address TEXT
-            )
-        ''')
-        conn.execute('''
-            CREATE TABLE IF NOT EXISTS total_visits (
-                visit_count INTEGER
-            )
-        ''')
-        # 初始化總訪問人數
-        if conn.execute('SELECT COUNT(*) FROM total_visits').fetchone()[0] == 0:
-            conn.execute('INSERT INTO total_visits (visit_count) VALUES (0)')
+    db = get_db_connection()
+    db.visitors.create_index("user_id", unique=True)  # 為訪客集合中的 `user_id` 建立唯一索引
+    if db.total_visits.count_documents({}) == 0:
+        db.total_visits.insert_one({"visit_count": 0})  # 初始化總訪問人數
+
 # 追蹤訪客資料
 def track_visitor(ip_address):
-    with get_db_connection() as conn:
-        # 如果 session 沒有 'user_id'，則生成一個唯一 ID
-        if 'user_id' not in session:
-            session['user_id'] = str(time.time())
+    db = get_db_connection()
+    user_id = session.get("user_id", str(time.time()))
+    session["user_id"] = user_id
+    current_time = int(time.time())
 
-        user_id = session['user_id']
-        current_time = int(time.time())
+    # 更新或新增訪客資料
+    db.visitors.update_one(
+        {"user_id": user_id},
+        {"$set": {"last_seen": current_time, "ip_address": ip_address}},
+        upsert=True
+    )
 
-        # 在 SQLite 中記錄這位訪客
-        conn.execute('INSERT OR REPLACE INTO visitors (user_id, last_seen, ip_address) VALUES (?, ?, ?)', (user_id, current_time, ip_address))
+    # 清理過期的訪客
+    db.visitors.delete_many({"last_seen": {"$lt": current_time - SESSION_TIMEOUT}})
 
-        # 清理過期的訪客
-        conn.execute('DELETE FROM visitors WHERE last_seen < ?', (current_time - SESSION_TIMEOUT,))
-
-        # 增加歷史訪問人數
-        conn.execute('UPDATE total_visits SET visit_count = visit_count + 1')
+    # 增加歷史訪問人數
+    db.total_visits.update_one({}, {"$inc": {"visit_count": 1}})
 
 # 查看當前在線人數
 def get_current_visitors():
-    with get_db_connection() as conn:
-        return conn.execute('SELECT COUNT(*) FROM visitors').fetchone()[0]
+    db = get_db_connection()
+    return db.visitors.count_documents({})
 
 # 查看歷史總訪問人數
 def get_total_visits():
-    with get_db_connection() as conn:
-        return conn.execute('SELECT visit_count FROM total_visits').fetchone()[0]
-
+    db = get_db_connection()
+    visit_data = db.total_visits.find_one()
+    return visit_data["visit_count"] if visit_data else 0
 
 # 執行 Python 程式碼的函數
 def execute_python(code, user_input=None):
@@ -247,37 +238,16 @@ def index():
         code = form.code.data
         output = execute_python(code)
 
-    return render_template('index.html', form=form, output=output, history=execution_history)
+    return render_template('index.html', form=form, output=output)
 
-# 處理 AJAX 請求以執行 Python 程式碼
-@app.route('/execute', methods=['POST'])
-def execute_code():
-    code = request.form['code']
-    output = execute_python(code)
-    return jsonify({'output': output})
-
-@app.errorhandler(404)
-def page_not_found(e):
-    return render_template('404.html'), 404
-
-# 处理其他未捕获的异常
-@app.errorhandler(Exception)
-def handle_exception(e):
-    return render_template('error.html', message=str(e)), 500
-
-# 後台管理頁面路由
+# 管理頁面路由
 @app.route('/admin')
 def admin():
     if not session.get('logged_in'):
         return redirect(url_for('login'))
 
-    system_info = get_system_info()
-    current_visitors = get_current_visitors()
-    total_visits = get_total_visits()
+    return render_template('admin.html')
 
-    return render_template('admin.html', system_info=system_info, current_visitors=current_visitors, total_visits=total_visits)
-
-# 啟動 Flask 應用
-if __name__ == '__main__':
+if __name__ == "__main__":
     init_db()
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host="0.0.0.0", port=10000)
