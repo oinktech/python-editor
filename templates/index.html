@@ -64,7 +64,7 @@
         .btn-primary:hover {
             background-color: #0056b3;
         }
-        .output, .history, .news {
+        .output, .history, .news, .current-visitors {
             margin-top: 30px;
             background-color: #ffffff;
             padding: 20px;
@@ -97,6 +97,38 @@
         .news-item:last-child {
             border-bottom: none;
         }
+
+        /* 翻牌效果樣式 */
+        .flip-card {
+            width: 100px;
+            height: 100px;
+            perspective: 1000px;
+            margin: 0 auto; /* 讓翻牌卡片居中 */
+        }
+
+        .flip-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+
+        .flip-card-front,
+        .flip-card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px; /* 調整字體大小 */
+        }
+
+        .flip-card-back {
+            transform: rotateY(180deg);
+        }
     </style>
 </head>
 <body>
@@ -124,6 +156,21 @@
             {% endif %}
         </div>
         {% endif %}
+        
+        <div class="current-visitors">
+            <h3>當前在線人數：</h3>
+            <div id="visitor-count" class="flip-card">
+                <div class="flip-card-inner">
+                    <div class="flip-card-front">
+                        <p id="current-visitors-value">{{ current_visitors }}</p>
+                    </div>
+                    <div class="flip-card-back">
+                        <p id="current-visitors-value-back">{{ current_visitors }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="news">
             <h3>最新消息：</h3>
             <div class="news-item">📢 新增了 pip 指令功能，現在可以安裝、卸載及更新模組！</div>
@@ -134,10 +181,10 @@
         <div class="pip-instructions">
             <h3>Pip 指令提示：</h3>
             <ul>
-                <li><strong>安裝模组：</strong> !pip install <em>模组名</em></li>
-                <li><strong>卸載模组：</strong> !pip uninstall <em>模组名</em></li>
-                <li><strong>更新模组：</strong> !pip install --upgrade <em>模组名</em></li>
-                <li><strong>列出所有已安裝模组：</strong> !pip list</li>
+                <li><strong>安裝模組：</strong> !pip install <em>模組名</em></li>
+                <li><strong>卸載模組：</strong> !pip uninstall <em>模組名</em></li>
+                <li><strong>更新模組：</strong> !pip install --upgrade <em>模組名</em></li>
+                <li><strong>列出所有已安裝模組：</strong> !pip list</li>
             </ul>
         </div>
 
@@ -159,13 +206,43 @@
                 });
             });
 
-            // 模拟 Python 的 input() 函数
+            // 模擬 Python 的 input() 函數
             window.input = function(promptMessage) {
                 return new Promise((resolve) => {
                     const userInput = prompt(promptMessage || "請輸入內容:");
                     resolve(userInput);
                 });
             };
+
+            function updateVisitorCount(newCount) {
+                const currentCountElem = document.getElementById('current-visitors-value');
+                const currentCountBackElem = document.getElementById('current-visitors-value-back');
+                const flipCardInner = document.querySelector('.flip-card-inner');
+
+                // 更新背面顯示的新數字
+                currentCountBackElem.textContent = newCount;
+
+                // 開始翻牌特效
+                flipCardInner.style.transform = 'rotateY(180deg)';
+
+                // 延遲後顯示新的正面數字
+                setTimeout(() => {
+                    currentCountElem.textContent = newCount;
+                    flipCardInner.style.transform = 'rotateY(0deg)'; // 回到原來的位置
+                }, 600); // 與 CSS 動畫時間相同
+            }
+
+            // 假設您有一個更新當前在線人數的 API
+            setInterval(async () => {
+                const response = await fetch('/get_system_info');
+                const data = await response.json();
+                const currentVisitors = data.current_visitors;
+
+                // 在這裡根據需要檢查是否有變化
+                if (currentVisitors !== parseInt(currentCountElem.textContent)) {
+                    updateVisitorCount(currentVisitors);
+                }
+            }, 1000); // 每五秒更新一次
         </script>
     </div>
 </body>
