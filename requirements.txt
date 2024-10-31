@@ -9,3 +9,4 @@ piggaga_models
 yfinance
 matplotlib
 IPython
+requests
