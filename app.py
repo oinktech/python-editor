@@ -246,7 +246,11 @@ def admin():
     if not session.get('logged_in'):
         return redirect(url_for('login'))
 
-    return render_template('admin.html')
+    system_info = get_system_info()
+    current_visitors = get_current_visitors()
+    total_visits = get_total_visits()
+
+    return render_template('admin.html', system_info=system_info, current_visitors=current_visitors, total_visits=total_visits)
 
 if __name__ == "__main__":
     init_db()
