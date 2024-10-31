@@ -10,3 +10,4 @@ yfinance
 matplotlib
 IPython
 requests
+flask-cors
