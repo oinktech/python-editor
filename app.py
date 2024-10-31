@@ -156,6 +156,7 @@ def list_installed_modules():
         return f"模塊列出失敗：{e}"
 
 # 獲取系統資源使用情況
+@app.route('/get_system_info', methods=['GET'])
 def get_system_info():
     # 磁碟使用情況
     total, used, free = shutil.disk_usage("/")
