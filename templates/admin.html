@@ -34,6 +34,26 @@
             to { opacity: 1; transform: translateY(0); }
         }
     </style>
+    <script>
+        function updateSystemInfo() {
+            fetch('/api/system-info')  // 替換為您的後端API端點
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('cpu-usage').textContent = data.cpu_usage + '%';
+                    document.getElementById('memory-usage').textContent = data.memory_usage.used + 'GB / ' + data.memory_usage.total + 'GB';
+                    document.getElementById('disk-usage').textContent = data.disk_usage.used + 'GB / ' + data.disk_usage.total + 'GB';
+                    document.getElementById('current-visitors').textContent = data.current_visitors;
+                    document.getElementById('total-visits').textContent = data.total_visits;
+                })
+                .catch(error => console.error('Error fetching system info:', error));
+        }
+
+        // 每 5 秒更新一次系統資訊
+        setInterval(updateSystemInfo, 5000);
+
+        // 頁面加載時立即更新
+        document.addEventListener('DOMContentLoaded', updateSystemInfo);
+    </script>
 </head>
 <body>
     <h1>管理員面板</h1>
@@ -42,15 +62,15 @@
     </div>
     <h2>系統資源使用情況</h2>
     <div class="info-box">
-        <p>CPU 使用率: {{ system_info.cpu_usage }}%</p>
-        <p>記憶體使用情況: {{ system_info.memory_usage.used }}GB / {{ system_info.memory_usage.total }}GB</p>
-        <p>磁碟使用情況: {{ system_info.disk_usage.used }}GB / {{ system_info.disk_usage.total }}GB</p>
+        <p>CPU 使用率: <span id="cpu-usage">{{ system_info.cpu_usage }}%</span></p>
+        <p>記憶體使用情況: <span id="memory-usage">{{ system_info.memory_usage.used }}GB / {{ system_info.memory_usage.total }}GB</span></p>
+        <p>磁碟使用情況: <span id="disk-usage">{{ system_info.disk_usage.used }}GB / {{ system_info.disk_usage.total }}GB</span></p>
     </div>
 
     <h2>網站流量信息</h2>
     <div class="info-box">
-        <p>當前在線人數: {{ current_visitors }}</p>
-        <p>歷史總訪問人數: {{ total_visits }}</p>
+        <p>當前在線人數: <span id="current-visitors">{{ current_visitors }}</span></p>
+        <p>歷史總訪問人數: <span id="total-visits">{{ total_visits }}</span></p>
     </div>
 </body>
 </html>
