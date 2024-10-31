@@ -4,134 +4,124 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>管理頁面</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         body {
             font-family: 'Arial', sans-serif;
-            background-color: #f4f4f9;
+            background-color: #e9ecef;
             margin: 0;
             padding: 20px;
+            color: #343a40;
         }
         h1, h2 {
             text-align: center;
-            color: #333;
+            color: #495057;
         }
         p {
             font-size: 18px;
-            color: #555;
+            color: #6c757d;
             text-align: center;
+            margin: 10px 0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
         }
         .info-box {
-            background-color: #fff;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             padding: 20px;
-            margin: 20px auto;
-            max-width: 500px;
-            animation: fadeIn 1s ease-out;
+            margin: 20px 0;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .info-box:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
         }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        .flip {
-            display: inline-block;
-            perspective: 1000px;
+        .icon {
+            font-size: 28px;
+            margin-right: 10px;
+            color: #007bff;
         }
-        .flip-inner {
-            position: relative;
-            width: 100%;
-            height: 1.2em;
-            transition: transform 0.6s;
-            transform-style: preserve-3d;
-        }
-        .flip-front, .flip-back {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            backface-visibility: hidden;
+        .stats {
             display: flex;
-            justify-content: center;
             align-items: center;
-            font-size: 24px;
+            border-bottom: 1px solid #f1f1f1;
+            padding: 15px 0;
         }
-        .flip-back {
-            transform: rotateY(180deg);
+        .stats:last-child {
+            border-bottom: none;
+        }
+        .stats p {
+            flex: 1;
+            text-align: left;
+            font-size: 20px;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 14px;
+            color: #6c757d;
         }
     </style>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
         $(document).ready(function() {
-            let previousData = {
-                cpu_usage: '{{ system_info.cpu_usage }}',
-                memory_usage: '{{ system_info.memory_usage.used }}',
-                total_memory: '{{ system_info.memory_usage.total }}',
-                disk_usage: '{{ system_info.disk_usage.used }}',
-                total_disk: '{{ system_info.disk_usage.total }}',
-                current_visitors: '{{ current_visitors }}',
-                total_visits: '{{ total_visits }}'
-            };
-
-            function flipUpdate(selector, newValue, oldValue) {
-                if (newValue !== oldValue) {
-                    $(selector + ' .flip-inner').css('transform', 'rotateY(180deg)');
-                    setTimeout(() => {
-                        $(selector + ' .flip-back').text(newValue);
-                        $(selector + ' .flip-inner').css('transform', 'rotateY(0deg)');
-                    }, 300); // Duration should match the CSS transition duration
-                }
-            }
-
             function fetchSystemInfo() {
                 $.ajax({
                     url: '/get_system_info',
                     method: 'GET',
                     success: function(data) {
                         $('#cpu-usage').text(data.cpu_usage + '%');
-                        flipUpdate('#cpu-usage', data.cpu_usage + '%', previousData.cpu_usage);
-                        previousData.cpu_usage = data.cpu_usage + '%';
-
                         $('#memory-usage').text(data.memory_usage.used + 'GB / ' + data.memory_usage.total + 'GB');
-                        flipUpdate('#memory-usage', data.memory_usage.used + 'GB / ' + data.memory_usage.total + 'GB', previousData.memory_usage + 'GB / ' + previousData.total_memory + 'GB');
-                        previousData.memory_usage = data.memory_usage.used;
-                        previousData.total_memory = data.memory_usage.total;
-
                         $('#disk-usage').text(data.disk_usage.used + 'GB / ' + data.disk_usage.total + 'GB');
-                        flipUpdate('#disk-usage', data.disk_usage.used + 'GB / ' + data.disk_usage.total + 'GB', previousData.disk_usage + 'GB / ' + previousData.total_disk + 'GB');
-                        previousData.disk_usage = data.disk_usage.used;
-                        previousData.total_disk = data.disk_usage.total;
-
                         $('#current-visitors').text(data.current_visitors);
-                        flipUpdate('#current-visitors', data.current_visitors, previousData.current_visitors);
-                        previousData.current_visitors = data.current_visitors;
-
                         $('#total-visits').text(data.total_visits);
-                        flipUpdate('#total-visits', data.total_visits, previousData.total_visits);
-                        previousData.total_visits = data.total_visits;
                     }
                 });
             }
 
             // 每 5 秒獲取一次系統信息
-            setInterval(fetchSystemInfo, 1000);
+            setInterval(fetchSystemInfo, 5000);
         });
     </script>
 </head>
 <body>
-    <h1>管理員面板</h1>
-    <div class="info-box">
-        <p>訪客 IP 地址: {{ ip_address }}</p>
-    </div>
-    <h2>系統資源使用情況</h2>
-    <div class="info-box">
-        <p>CPU 使用率: <span class="flip" id="cpu-usage"><span class="flip-inner"><span class="flip-front">{{ system_info.cpu_usage }}%</span><span class="flip-back">{{ system_info.cpu_usage }}%</span></span></span></p>
-        <p>記憶體使用情況: <span class="flip" id="memory-usage"><span class="flip-inner"><span class="flip-front">{{ system_info.memory_usage.used }}GB / {{ system_info.memory_usage.total }}GB</span><span class="flip-back">{{ system_info.memory_usage.used }}GB / {{ system_info.memory_usage.total }}GB</span></span></span></p>
-        <p>磁碟使用情況: <span class="flip" id="disk-usage"><span class="flip-inner"><span class="flip-front">{{ system_info.disk_usage.used }}GB / {{ system_info.disk_usage.total }}GB</span><span class="flip-back">{{ system_info.disk_usage.used }}GB / {{ system_info.disk_usage.total }}GB</span></span></span></p>
-    </div>
+    <div class="container">
+        <h1>管理員面板</h1>
+        <div class="info-box">
+            <p><i class="fas fa-user-circle icon"></i>訪客 IP 地址: <strong>{{ ip_address }}</strong></p>
+        </div>
+        <h2>系統資源使用情況</h2>
+        <div class="info-box">
+            <div class="stats">
+                <p><i class="fas fa-microchip icon"></i>CPU 使用率: <strong id="cpu-usage">{{ system_info.cpu_usage }}%</strong></p>
+            </div>
+            <div class="stats">
+                <p><i class="fas fa-memory icon"></i>記憶體使用情況: <strong id="memory-usage">{{ system_info.memory_usage.used }}GB / {{ system_info.memory_usage.total }}GB</strong></p>
+            </div>
+            <div class="stats">
+                <p><i class="fas fa-hdd icon"></i>磁碟使用情況: <strong id="disk-usage">{{ system_info.disk_usage.used }}GB / {{ system_info.disk_usage.total }}GB</strong></p>
+            </div>
+        </div>
 
-    <h2>網站流量信息</h2>
-    <div class="info-box">
-        <p>當前在線人數: <span class="flip" id="current-visitors"><span class="flip-inner"><span class="flip-front">{{ current_visitors }}</span><span class="flip-back">{{ current_visitors }}</span></span></span></p>
-        <p>歷史總訪問人數: <span class="flip" id="total-visits"><span class="flip-inner"><span class="flip-front">{{ total_visits }}</span><span class="flip-back">{{ total_visits }}</span></span></span></p>
+        <h2>網站流量信息</h2>
+        <div class="info-box">
+            <div class="stats">
+                <p><i class="fas fa-users icon"></i>當前在線人數: <strong id="current-visitors">{{ current_visitors }}</strong></p>
+            </div>
+            <div class="stats">
+                <p><i class="fas fa-history icon"></i>歷史總訪問人數: <strong id="total-visits">{{ total_visits }}</strong></p>
+            </div>
+        </div>
+        <div class="footer">
+            <p>&copy; 2024 oinktech 版權所有</p>
+        </div>
     </div>
 </body>
 </html>
