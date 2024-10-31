@@ -14,11 +14,12 @@ import os
 from dotenv import load_dotenv
 import multiprocessing
 import concurrent.futures
-
+from flask_cors import CORS
 # 加載環境變數
 load_dotenv()
 
 app = Flask(__name__)
+CORS(app)
 app.secret_key = "your_secret_key_here"
 
 # 設定 session 過期時間，假設以秒為單位
