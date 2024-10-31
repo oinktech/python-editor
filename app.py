@@ -57,6 +57,35 @@ def init_db():
         # 初始化總訪問人數
         if conn.execute('SELECT COUNT(*) FROM total_visits').fetchone()[0] == 0:
             conn.execute('INSERT INTO total_visits (visit_count) VALUES (0)')
+# 追蹤訪客資料
+def track_visitor(ip_address):
+    with get_db_connection() as conn:
+        # 如果 session 沒有 'user_id'，則生成一個唯一 ID
+        if 'user_id' not in session:
+            session['user_id'] = str(time.time())
+
+        user_id = session['user_id']
+        current_time = int(time.time())
+
+        # 在 SQLite 中記錄這位訪客
+        conn.execute('INSERT OR REPLACE INTO visitors (user_id, last_seen, ip_address) VALUES (?, ?, ?)', (user_id, current_time, ip_address))
+
+        # 清理過期的訪客
+        conn.execute('DELETE FROM visitors WHERE last_seen < ?', (current_time - SESSION_TIMEOUT,))
+
+        # 增加歷史訪問人數
+        conn.execute('UPDATE total_visits SET visit_count = visit_count + 1')
+
+# 查看當前在線人數
+def get_current_visitors():
+    with get_db_connection() as conn:
+        return conn.execute('SELECT COUNT(*) FROM visitors').fetchone()[0]
+
+# 查看歷史總訪問人數
+def get_total_visits():
+    with get_db_connection() as conn:
+        return conn.execute('SELECT visit_count FROM total_visits').fetchone()[0]
+
 
 # 執行 Python 程式碼的函數
 def execute_python(code, user_input=None):
@@ -178,40 +207,20 @@ def get_system_info():
         "free": memory.available // (2**30)
     }
 
+    # 獲取當前在線人數
+    current_visitors = get_current_visitors()
+    
+    # 獲取歷史總訪問人數
+    total_visits = get_total_visits()
+
     return {
         "disk_usage": disk_usage,
         "cpu_usage": cpu_usage,
-        "memory_usage": memory_usage
+        "memory_usage": memory_usage,
+        "current_visitors": current_visitors,
+        "total_visits": total_visits
     }
 
-# 追蹤訪客資料
-def track_visitor(ip_address):
-    with get_db_connection() as conn:
-        # 如果 session 沒有 'user_id'，則生成一個唯一 ID
-        if 'user_id' not in session:
-            session['user_id'] = str(time.time())
-
-        user_id = session['user_id']
-        current_time = int(time.time())
-
-        # 在 SQLite 中記錄這位訪客
-        conn.execute('INSERT OR REPLACE INTO visitors (user_id, last_seen, ip_address) VALUES (?, ?, ?)', (user_id, current_time, ip_address))
-
-        # 清理過期的訪客
-        conn.execute('DELETE FROM visitors WHERE last_seen < ?', (current_time - SESSION_TIMEOUT,))
-
-        # 增加歷史訪問人數
-        conn.execute('UPDATE total_visits SET visit_count = visit_count + 1')
-
-# 查看當前在線人數
-def get_current_visitors():
-    with get_db_connection() as conn:
-        return conn.execute('SELECT COUNT(*) FROM visitors').fetchone()[0]
-
-# 查看歷史總訪問人數
-def get_total_visits():
-    with get_db_connection() as conn:
-        return conn.execute('SELECT visit_count FROM total_visits').fetchone()[0]
 
 # 登錄頁面路由
 @app.route('/login', methods=['GET', 'POST'])
