@@ -194,19 +194,7 @@
         </div>
         {% endif %}
         
-        <div class="current-visitors">
-            <h3>當前在線人數：</h3>
-            <div class="flip-card">
-                <div class="flip-card-inner">
-                    <div class="flip-card-front">
-                        <p id="current-visitors-value">{{ current_visitors }}</p>
-                    </div>
-                    <div class="flip-card-back">
-                        <p id="current-visitors-value-back">{{ current_visitors }}</p>
-                    </div>
-                </div>
-            </div>
-        </div>
+        
 
         <div class="news">
             <h3>最新消息：</h3>
@@ -224,7 +212,19 @@
                 <li><strong>列出所有已安裝模組：</strong> !pip list</li>
             </ul>
         </div>
-
+        <div class="current-visitors">
+            <h3>當前在線人數：</h3>
+            <div class="flip-card">
+                <div class="flip-card-inner">
+                    <div class="flip-card-front">
+                        <p id="current-visitors-value">{{ current_visitors }}</p>
+                    </div>
+                    <div class="flip-card-back">
+                        <p id="current-visitors-value-back">{{ current_visitors }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/prism.min.js"></script>
         <script>
             document.addEventListener('DOMContentLoaded', (event) => {
