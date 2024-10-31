@@ -11,3 +11,5 @@ matplotlib
 IPython
 requests
 flask-cors
+pymongo
+dnspython
